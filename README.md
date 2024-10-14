@@ -2,10 +2,10 @@
 
 This code repository proposes two indexing methods, STUM and STUBRIN, which aim to improve the query performance and update performance of spatially learnt indexes, and builds on our previous work on SLIBS and SLBRIN. 
 
-1. Basic Structure for Spatial Learned Index，SLIBS: A spatial learned index using first dimensionality reduction and then construction of a unidimensional learned index can be seen in detail in Wang Lijun's PhD thesis
-2. Spatial Learned Block Range Index，SLBRIN: Optimise SLIBS using space partitioning method and block range index structure to improve query performance in external memory space,《SLBRIN: A Spatial Learned Index Based on BRIN》](https://www.mdpi.com/2220-9964/12/4/171).
-3. Tempo-Spatial updatable Spatial Learned Index，STUSLI: Optimisation of SLIBS using spatio-temporal sequence prediction algorithm to improve the query performance and update performance of the update process.
-4. Updatable Spatial Learned Block Range Index，STUBRIN: Optimisation of SLBRIN using TSUM to complement its strengths and focus on inefficient updating due to inefficient model construction.
+1. Basic Structure for Spatial Learned Index，SLIBS: A spatial learned index using first dimensionality reduction and then construction of a unidimensional learned index
+2. Spatial Learned Block Range Index，SLBRIN: Optimise SLIBS using space partitioning method and block range index structure to improve query performance in external memory space
+3. Spatial-Tempo Updatable Method，STUM: Optimisation of SLIBS using spatio-temporal sequence prediction algorithm to improve the query performance and update performance of the update process.
+4. Spatial-Tempo Updatable Learned Block Range Index，STUBRIN: Optimisation of SLBRIN using STUM to complement its strengths and focus on inefficient updating due to inefficient model construction.
 
 ## Content
 
@@ -14,8 +14,6 @@ This code repository proposes two indexing methods, STUM and STUBRIN, which aim 
   * index：After processing, the original dataset is downscaled and sorted by Geohash.
   * query：Query conditions, containing point search conditions, range search conditions and k-nearest neighbour search conditions for the three datasets.
   * create_data.py：Data processing code, including data cleansing of nyct datasets, generation of synthetic datasets, etc.
-* result
-  * create_result*.py：Result processing code, according to the style of different journals out of the figure。
 * src
   * experiment
   * proposed_sli：our propose index method
