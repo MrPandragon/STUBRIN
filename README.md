@@ -1,6 +1,6 @@
 ## Introduction
 
-This code repository proposes two indexing methods, STUM and STUBRIN, which aim to improve the query performance and update performance of spatially learnt indexes, and builds on our previous work on SLIBS and SLBRIN. 
+This code repository proposes two indexing methods, STUM and STUBRIN, which aim to improve the query performance and update performance of spatially learnt indexes, and build SLIBS and SLBRIN for contruction of STUM and STUBRIN . 
 
 1. Basic Structure for Spatial Learned Index，SLIBS: A spatial learned index using first dimensionality reduction and then construction of a unidimensional learned index
 2. Spatial Learned Block Range Index，SLBRIN: Optimise SLIBS using space partitioning method and block range index structure to improve query performance in external memory space
