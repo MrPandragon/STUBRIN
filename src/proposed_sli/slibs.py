@@ -196,8 +196,8 @@ class NNSimple(MLPSimple):
 
 def main():
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
-    model_path = "model/slibs_10w/"
-    data_distribution = Distribution.NYCT_10W_SORTED
+    model_path = "model/slibs_skew/"
+    data_distribution = Distribution.SKEW_SORTED
     if os.path.exists(model_path) is False:
         os.makedirs(model_path)
     index = SLIBS(model_path=model_path)
@@ -224,7 +224,7 @@ def main():
                     use_thresholds=[False, False],
                     thresholds=[5, 20],
                     retrain_time_limits=[4, 2],
-                    thread_pool_size=6)
+                    thread_pool_size=1)
         index.save()
         end_time = time.time()
         build_time = end_time - start_time
@@ -261,7 +261,7 @@ def main():
     logging.info("KNN query io cost: %s" % ((index.io_cost - io_cost) / len(knn_query_list)))
     io_cost = index.io_cost
     np.savetxt(model_path + 'knn_query_result.csv', np.array(results, dtype=object), delimiter=',', fmt='%s')
-    update_data_list = load_data(Distribution.NYCT_10W, 1)
+    update_data_list = load_data(Distribution.SKEW, 1)
     start_time = time.time()
     index.insert(update_data_list)
     end_time = time.time()

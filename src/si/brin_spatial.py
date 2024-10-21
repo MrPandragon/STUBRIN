@@ -361,8 +361,8 @@ class BlockRange:
 
 def main():
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
-    model_path = "model/brinspatial_10w/"
-    data_distribution = Distribution.NYCT_10W_SORTED
+    model_path = "model/brinspatial_skew/"
+    data_distribution = Distribution.SKEW_SORTED
     if os.path.exists(model_path) is False:
         os.makedirs(model_path)
     index = BRINSpatial(model_path=model_path)
@@ -396,7 +396,7 @@ def main():
     logging.info("Structure size: %s" % structure_size)
     logging.info("Index entry size: %s" % ie_size)
     io_cost = 0
-    path = '../../data/query/point_query_nyct.npy'
+    path = '../../data/query/point_query_skew.npy'
     point_query_list = np.load(path, allow_pickle=True).tolist()
     start_time = time.time()
     results = index.point_query(point_query_list)
@@ -424,7 +424,7 @@ def main():
     logging.info("KNN query io cost: %s" % ((index.io_cost - io_cost) / len(knn_query_list)))
     io_cost = index.io_cost
     np.savetxt(model_path + 'knn_query_result.csv', np.array(results, dtype=object), delimiter=',', fmt='%s')
-    update_data_list = load_data(Distribution.NYCT_10W, 1)
+    update_data_list = load_data(Distribution.SKEW, 1)
     start_time = time.time()
     index.insert(update_data_list)
     end_time = time.time()

@@ -7,7 +7,7 @@ import time
 
 import numpy as np
 
-from src.experiment.common_utils import Distribution, load_data, data_precision, data_region
+from src.experiment.common_utils import Distribution, load_data, data_precision, data_region, load_query
 from src.spatial_index import SpatialIndex
 from src.utils.common_utils import Region, Point
 
@@ -219,23 +219,23 @@ class PRQuadTree(SpatialIndex):
             self.io_cost += 1
             # 所有的or：region的四至点刚好在子节点的region上，因为split的时候经纬度都是向上取整，所以子节点的重心在右和上
             if node.LB.region.contain(Point(region.left, region.bottom)):
-                self.range_search(Region(region.bottom, min(node.LB.region.up, region.up),
+                self.range_search_by_iter(Region(region.bottom, min(node.LB.region.up, region.up),
                                          region.left, min(node.LB.region.right, region.right)),
                                   result, node.LB)
             if node.RB.region.contain(Point(region.right, region.bottom)) \
                     or (region.bottom < node.RB.region.up and region.right == node.RB.region.right):
-                self.range_search(Region(region.bottom, min(node.LB.region.up, region.up),
+                self.range_search_by_iter(Region(region.bottom, min(node.LB.region.up, region.up),
                                          max(node.RU.region.left, region.left), region.right),
                                   result, node.RB)
             if node.LU.region.contain(Point(region.left, region.up)) \
                     or (region.left < node.LU.region.right and region.up == node.LU.region.up):
-                self.range_search(Region(max(node.RU.region.bottom, region.bottom), region.up,
+                self.range_search_by_iter(Region(max(node.RU.region.bottom, region.bottom), region.up,
                                          region.left, min(node.LB.region.right, region.right)),
                                   result, node.LU)
             if node.RU.region.contain(Point(region.right, region.up)) \
                     or (region.right > node.RU.region.left and region.up == node.RU.region.up) \
                     or (region.up > node.RU.region.bottom and region.right == node.RU.region.right):
-                self.range_search(Region(max(node.RU.region.bottom, region.bottom), region.up,
+                self.range_search_by_iter(Region(max(node.RU.region.bottom, region.bottom), region.up,
                                          max(node.RU.region.left, region.left), region.right),
                                   result, node.RU)
 
@@ -357,6 +357,7 @@ class PRQuadTree(SpatialIndex):
                os.path.getsize(os.path.join(self.model_path, "prquadtree_item.npy")) - 128
 
 
+
 class Node:
     def __init__(self, region, depth=1, is_leaf=1, LB=None, RB=None, LU=None, RU=None, items=None):
         self.depth = depth
@@ -434,8 +435,8 @@ def get_leaf_and_path(node_list, result, cur_path, key):
 
 def main():
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
-    model_path = "model/prquadtree_10w/"
-    data_distribution = Distribution.NYCT_10W
+    model_path = "model/prquadtree_skew/"
+    data_distribution = Distribution.SKEW
     if os.path.exists(model_path) is False:
         os.makedirs(model_path)
     index = PRQuadTree(model_path=model_path)
@@ -459,7 +460,7 @@ def main():
     logging.info("Structure size: %s" % structure_size)
     logging.info("Index entry size: %s" % ie_size)
     io_cost = 0
-    path = '../../data/query/point_query_nyct.npy'
+    path = '../../data/query/point_query_skew.npy'
     point_query_list = np.load(path, allow_pickle=True).tolist()
     start_time = time.time()
     results = index.point_query(point_query_list)
@@ -487,7 +488,7 @@ def main():
     logging.info("KNN query io cost: %s" % ((index.io_cost - io_cost) / len(knn_query_list)))
     io_cost = index.io_cost
     np.savetxt(model_path + 'knn_query_result.csv', np.array(results, dtype=object), delimiter=',', fmt='%s')
-    update_data_list = load_data(Distribution.NYCT_10W, 1)
+    update_data_list = load_data(Distribution.SKEW, 1)
     start_time = time.time()
     index.insert(update_data_list)
     end_time = time.time()

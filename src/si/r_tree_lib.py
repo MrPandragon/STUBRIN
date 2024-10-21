@@ -58,7 +58,7 @@ class RTree(SpatialIndex):
 
 def main():
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
-    model_path = "model/r_tree_lib_10w/"
+    model_path = "model/r_tree_lib_skew/"
     if os.path.exists(model_path) is False:
         os.makedirs(model_path)
     index = RTree(model_path=model_path)
@@ -69,7 +69,7 @@ def main():
     else:
         index.logging.info("*************start %s************" % index_name)
         start_time = time.time()
-        build_data_list = load_data(Distribution.NYCT_10W, 0)
+        build_data_list = load_data(Distribution.SKEW, 0)
         index.build(data_list=build_data_list, threshold_number=100)
         index.save()
         end_time = time.time()
@@ -78,7 +78,7 @@ def main():
     structure_size, ie_size = index.size()
     logging.info("Structure size: %s" % structure_size)
     logging.info("Index entry size: %s" % ie_size)
-    path = '../../data/query/point_query_nyct.npy'
+    path = '../../data/query/point_query_skew.npy'
     point_query_list = np.load(path, allow_pickle=True).tolist()
     start_time = time.time()
     results = index.point_query(point_query_list)
@@ -86,7 +86,7 @@ def main():
     search_time = (end_time - start_time) / len(point_query_list)
     logging.info("Point query time: %s" % search_time)
     np.savetxt(model_path + 'point_query_result.csv', np.array(results, dtype=object), delimiter=',', fmt='%s')
-    path = '../../data/query/range_query_nyct.npy'
+    path = '../../data/query/range_query_skew.npy'
     range_query_list = np.load(path, allow_pickle=True).tolist()
     start_time = time.time()
     results = index.range_query(range_query_list)
@@ -94,7 +94,7 @@ def main():
     search_time = (end_time - start_time) / len(range_query_list)
     logging.info("Range query time: %s" % search_time)
     np.savetxt(model_path + 'range_query_result.csv', np.array(results, dtype=object), delimiter=',', fmt='%s')
-    path = '../../data/query/knn_query_nyct.npy'
+    path = '../../data/query/knn_query_skew.npy'
     knn_query_list = np.load(path, allow_pickle=True).tolist()
     start_time = time.time()
     results = index.knn_query(knn_query_list)
@@ -102,7 +102,7 @@ def main():
     search_time = (end_time - start_time) / len(knn_query_list)
     logging.info("KNN query time: %s" % search_time)
     np.savetxt(model_path + 'knn_query_result.csv', np.array(results, dtype=object), delimiter=',', fmt='%s')
-    update_data_list = load_data(Distribution.NYCT_10W, 1)
+    update_data_list = load_data(Distribution.SKEW, 1)
     start_time = time.time()
     index.insert(update_data_list)
     end_time = time.time()

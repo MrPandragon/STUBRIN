@@ -19,6 +19,8 @@ class Distribution(Enum):
     NORMAL_SORTED = 7
     NYCT_SORTED = 8
     NYCT_10W_SORTED = 9
+    SKEW = 10
+    SKEW_SORTED = 11
 
 
 # data for build index
@@ -33,6 +35,8 @@ build_data_path = {
     Distribution.NORMAL_SORTED: "../../data/index/normal_1_sorted.npy",
     Distribution.NYCT_SORTED: "../../data/index/nyct_1_sorted.npy",
     Distribution.NYCT_10W_SORTED: "../../data/index/nyct_1_10w_sorted.npy",
+    Distribution.SKEW: "../../data/table/skew_1.npy",
+    Distribution.SKEW_SORTED: "../../data/index/skew_1_sorted.npy",
 }
 # data for update index
 update_data_path = {
@@ -46,6 +50,8 @@ update_data_path = {
     Distribution.NORMAL_SORTED: "../../data/table/normal_2.npy",
     Distribution.NYCT_SORTED: "../../data/table/nyct_2.npy",
     Distribution.NYCT_10W_SORTED: "../../data/table/nyct_2_10w.npy",
+    Distribution.SKEW: "../../data/table/skew_2.npy",
+    Distribution.SKEW_SORTED: "../../data/table/skew_2.npy",
 }
 data_precision = {
     Distribution.UNIFORM: 8,
@@ -58,6 +64,8 @@ data_precision = {
     Distribution.NORMAL_SORTED: 8,
     Distribution.NYCT_SORTED: 6,
     Distribution.NYCT_10W_SORTED: 6,
+    Distribution.SKEW: 8,
+    Distribution.SKEW_SORTED: 8,
 }
 data_region = {
     Distribution.UNIFORM: Region(0, 1, 0, 1),
@@ -70,6 +78,8 @@ data_region = {
     Distribution.NORMAL_SORTED: Region(0, 1, 0, 1),
     Distribution.NYCT_SORTED: Region(40.61, 40.87, -74.05, -73.76),
     Distribution.NYCT_10W_SORTED: Region(40.61, 40.87, -74.05, -73.76),
+    Distribution.SKEW: Region(0, 1, 0, 1),
+    Distribution.SKEW_SORTED: Region(0, 1, 0, 1),
 }
 
 
@@ -91,6 +101,8 @@ point_query_path = {
     Distribution.NORMAL_SORTED: '../../data/query/point_query_normal.npy',
     Distribution.NYCT_SORTED: '../../data/query/point_query_nyct.npy',
     Distribution.NYCT_10W_SORTED: '../../data/query/point_query_nyct.npy',
+    Distribution.SKEW: '../../data/query/point_query_skew.npy',
+    Distribution.SKEW_SORTED: '../../data/query/point_query_skew.npy',
 }
 range_query_path = {
     Distribution.UNIFORM: '../../data/query/range_query_uniform.npy',
@@ -103,6 +115,8 @@ range_query_path = {
     Distribution.NORMAL_SORTED: '../../data/query/range_query_normal.npy',
     Distribution.NYCT_SORTED: '../../data/query/range_query_nyct.npy',
     Distribution.NYCT_10W_SORTED: '../../data/query/range_query_nyct.npy',
+    Distribution.SKEW: '../../data/query/range_query_skew.npy',
+    Distribution.SKEW_SORTED: '../../data/query/range_query_skew.npy',
 }
 knn_query_path = {
     Distribution.UNIFORM: '../../data/query/knn_query_uniform.npy',
@@ -115,6 +129,8 @@ knn_query_path = {
     Distribution.NORMAL_SORTED: '../../data/query/knn_query_normal.npy',
     Distribution.NYCT_SORTED: '../../data/query/knn_query_nyct.npy',
     Distribution.NYCT_10W_SORTED: '../../data/query/knn_query_nyct.npy',
+    Distribution.SKEW: '../../data/query/knn_query_skew.npy',
+    Distribution.SKEW_SORTED: '../../data/query/knn_query_skew.npy',
 }
 
 

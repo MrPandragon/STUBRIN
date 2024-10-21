@@ -29,7 +29,8 @@ if __name__ == '__main__':
         (STUSLI, "slibs/%s_SORTED_1000", "stusli/%s"),
         (STUBRIN, "slbrin/%s_SORTED_10000", "stubrin/%s"),
     ]
-    data_distributions = [Distribution.NYCT_SORTED, Distribution.NORMAL_SORTED, Distribution.UNIFORM_SORTED]
+    # data_distributions = [Distribution.NYCT_SORTED, Distribution.NORMAL_SORTED, Distribution.UNIFORM_SORTED]
+    data_distributions = [Distribution.SKEW_SORTED]
     for data_distribution in data_distributions:
         point_query_list = load_query(data_distribution, 0).tolist()
         range_query_list = load_query(data_distribution, 1).tolist()[2000:3000]

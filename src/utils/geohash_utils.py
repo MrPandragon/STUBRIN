@@ -49,7 +49,25 @@ class Geohash:
         return round(lng, self.data_precision), round(lat, self.data_precision)
 
     def merge_bits(self, int1, int2):
+
+
+        # binary_string = bin(int1)[2:].rjust(self.dim_bits, '0')
+
+        # # 打印 int1 和生成的二进制字符串长度
+        # print(f"int1: {int1}, binary_string: {binary_string}, length: {len(binary_string)}")
+        #
+        # # 检查是否超过了预期长度
+        # if len(binary_string) > self.dim_bits:
+        #     print(f"Warning: binary_string length exceeds {self.dim_bits}: {binary_string}")
+
+        # 确保二进制字符串的长度与切片长度一致
         self.geohash_template[1::2] = bin(int1)[2:].rjust(self.dim_bits, '0')
+
+        # binary_string_1 = bin(int2)[2:].rjust(self.dim_bits, '0')
+        # print(f"int2: {int2}, binary_string_1: {binary_string_1}, length: {len(binary_string_1)}")
+        # if len(binary_string_1) > self.dim_bits:
+        #     print(f"Warning: binary_string_1 length exceeds {self.dim_bits}: {binary_string_1}")
+
         self.geohash_template[0::2] = bin(int2)[2:].rjust(self.dim_bits, '0')
         return int(''.join(self.geohash_template), 2)
 
