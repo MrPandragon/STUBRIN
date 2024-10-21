@@ -15,11 +15,11 @@ class MyError(Exception):
 
 def csv_to_npy(input_path, output_path):
     data_list = pandas.read_csv(input_path).values[:, [10, 11]]
-    # 时间字符串转时间戳
+    # change time string to timestamp
     t_list = pandas.read_csv(input_path).values[:, [5]].astype(np.datetime64).astype(np.int32).reshape(
         data_list.shape[0])
     data_list = np.insert(data_list, 2, t_list, axis=1)
-    # 根据时间戳排序
+    # sort by time
     data_list = data_list[t_list.argsort()]
     np.save(output_path, data_list)
 
@@ -143,25 +143,24 @@ def synthetic_data(output_path, data_size, spatial_scope, time_scope, data_preci
         y = np.random.normal(0, 1, size=data_size)
         x = np.around(x * x_redius / max(-x.min(), x.max()) + x_center, decimals=data_precision)
         y = np.around(y * y_redius / max(-y.min(), y.max()) + y_center, decimals=data_precision)
-        # 单独处理1：1作为最大值，在geohash编码时，会超出长度限制，比如8位小数，0-1范围，geohash编码为1000...000，长度31，超出30限制
+        # special case: 1 as the max value, when geohash encode, it will exceed the length limit, e.g. 8 decimal, 0-1 range, geohash encode as 1000...000, length 31, exceed 30 limit
         x[x == 1] = 1 - pow(10, -data_precision)
         y[y == 1] = 1 - pow(10, -data_precision)
 
     elif type == 'skew':
 
-        # 定义倾斜因子 c（可以根据需要调整）
-        c = 9  # 这是“压缩”因子，可以根据需要调整
+        # define the skew factor c (can be adjusted as needed)
+        c = 9  # this is the "compression" factor, can be adjusted as needed
 
-        # 生成均匀分布的 x 和 y 值
+        # generate uniform x and y values
         x = np.around(np.random.uniform(spatial_scope[2], spatial_scope[3], size=data_size), decimals=data_precision)
         y = np.around(np.random.uniform(spatial_scope[0], spatial_scope[1], size=data_size), decimals=data_precision)
 
-        # 对 y 维度进行倾斜变换
+        # change the y values to be skewed
         y = np.around(y ** c, decimals=data_precision)
 
-        # 四舍五入到指定精度
+        # Round to the specified precision
         y = np.around(y, decimals=data_precision)
-        # 单独处理1：1作为最大值，在geohash编码时，会超出长度限制，比如8位小数，0-1范围，geohash编码为1000...000，长度31，超出30限制
         x[x == 1] = 1 - pow(10, -data_precision)
         y[y == 1] = 1 - pow(10, -data_precision)
 
@@ -178,26 +177,27 @@ def create_distinct_data(input_path, output_path):
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
-    # # 1. 把csv转npy
-    # # 数据来源：从http://www.andresmh.com/nyctaxitrips/下载trip_data.7z，拿到其中的一月份和二月份数据csv，转成npy
-    # # npy是外存结构，size=128Byte的头文件大小+数据大小，csv的内容都是string
+    # # 1. change csv to npy
+    # # date source: http://www.andresmh.com/nyctaxitrips/, download trip_data.7z,
+    # # get the csv of January and February, convert to npy
     # input_path = "./trip_data_1.csv"
     # output_path = "./table/nyct_1.npy"
     # csv_to_npy(input_path, output_path)
     # input_path = r"./trip_data_2.csv"
     # output_path = "./table/nyct_2.npy"
     # csv_to_npy(input_path, output_path)
-    # # 2. 数据清洗，只选取region内
-    # # 数据总记录数：14776615+13990176，1.50GB+1.39GB
-    # # Region(40.61, 40.87, -74.05, -73.76)内：14494739+13716799，时间范围1356998400-1359676799-1362095999
+    # # 2. clean data, only select data in region
+    # # the number of data in region: 14494739+13716799, 1.50GB+1.39GB
+    # # Region(40.61, 40.87, -74.05, -73.76)：14494739+13716799，time range 1356998400-1359676799-1362095999
     # input_path = "./table/nyct_1.npy"
     # output_path = "./table/nyct_1.npy"
     # filter_row_in_region(input_path, output_path, Region(40.61, 40.87, -74.05, -73.76))
     # input_path = "./table/nyct_2.npy"
     # output_path = "./table/nyct_2.npy"
     # filter_row_in_region(input_path, output_path, Region(40.61, 40.87, -74.05, -73.76))
-    # # 3. 生成uniform/normal/skew的数据
-    # # 精度8，范围0-1-0-1，geohash长度为60，精度9的话长度就66了，超过了int64的范围
+    # # 3. generate uniform/normal/skew data
+    # # the precision of geohash is 8, the length is 60
+    #  # if the precision is 9, the length is 66, exceed the range of int64
     # output_path = "./table/uniform_1.npy"
     # synthetic_data(output_path, 14494739, [0, 1, 0, 1], [1356998400, 1359676799], 8, 'uniform')
     # output_path = "./table/uniform_2.npy"
@@ -210,7 +210,7 @@ if __name__ == '__main__':
     # synthetic_data(output_path,  14494739, [0, 1, 0, 1], [1356998400, 1359676799], 8, 'skew')
     # output_path = "./table/skew_2.npy"
     # synthetic_data(output_path, 13716799, [0, 1, 0, 1], [1359676800, 1362095999], 8, 'skew')
-    # # 4. 生成10w的数据
+    # # 4. get 10w data
     # input_path = "./table/uniform_1.npy"
     # output_path = './table/uniform_1_10w.npy'
     # sample(input_path, output_path, 100000)
@@ -235,11 +235,11 @@ if __name__ == '__main__':
     # input_path = "./table/nyct_2.npy"
     # output_path = './table/nyct_2_10w.npy'
     # sample(input_path, output_path, 100000)
-    # [Optional] 5. 生成不重复的数据
+    # [Optional] 5. get distinct data
     # input_path = "./table/nyct_1_10w.npy"
     # output_path = "./table/nyct_1_10w_distinct.npy"
     # create_distinct_data(input_path, output_path)
-    # # 6. 生成索引列
+    # # 6. get key field
     # output_path = "./table/uniform_1.npy"
     # output_path = "./table/uniform_1_10w.npy"
     # output_path = "./table/normal_1.npy"
@@ -260,7 +260,7 @@ if __name__ == '__main__':
     # output_path = "./table/nyct_2_10w.npy"
     # first_key = 100000
     # add_key_field(output_path, output_path, first_key)
-    # # 7. Geohash排序数据
+    # # 7. sort by geohash
     # input_path = "./table/uniform_1.npy"
     # output_path = "./index/uniform_1_sorted.npy"
     # input_path = "./table/normal_1.npy"
@@ -276,7 +276,7 @@ if __name__ == '__main__':
     # data_precision = 6
     # region = Region(40.61, 40.87, -74.05, -73.76)
     # geohash_and_sort(input_path, output_path, data_precision, region)
-    # # 8 npy转标准table表格存储：xyzti为'f8, f8, i8, i4, i4'
+    # # 8 from npy to table：xyzti are 'f8, f8, i8, i4, i4'
     # output_path = "./table/uniform_1.npy"
     # npy_to_table(output_path, output_path, False)
     # output_path = "./table/uniform_1_10w.npy"
@@ -307,7 +307,7 @@ if __name__ == '__main__':
     # npy_to_table(output_path, output_path, True)
     # output_path = "./index/nyct_1_10w_sorted.npy"
     # npy_to_table(output_path, output_path, True)
-    # # 1. 生成point检索范围
+    # # 1. get range of point query
     # input_path = './table/uniform_1.npy'
     # output_path = './query/point_query_uniform.npy'
     # input_path = './table/normal_1.npy'
@@ -318,7 +318,7 @@ if __name__ == '__main__':
     # output_path = './query/point_query_nyct.npy'
     # query_number_limit = 1000
     # create_point_query(input_path, output_path, query_number_limit)
-    # # 2. 生成range检索范围
+    # # 2. get range of range query
     # output_path = './query/range_query_uniform.npy'
     # data_range = [0, 1, 0, 1]
     # output_path = './query/range_query_normal.npy'
@@ -330,7 +330,7 @@ if __name__ == '__main__':
     # data_range = [40.61, 40.87, -74.05, -73.76]
     # query_number_limit = 1000
     # create_range_query(output_path, data_range, query_number_limit, range_ratio_list)
-    # # 3.生成knn检索范围
+    # # 3.get range of knn query
     # input_path = './table/uniform_1.npy'
     # output_path = './query/knn_query_uniform.npy'
     # input_path = './table/normal_1.npy'
@@ -342,6 +342,8 @@ if __name__ == '__main__':
     # query_number_limit = 1000
     # n_list = [4, 8, 16, 32, 64]
     # create_knn_query(input_path, output_path, query_number_limit, n_list)
+
+    # # 4. clip time domain
     # paths = ['./table/uniform_2.npy', './table/normal_2.npy', './table/nyct_2.npy','./table/skew_2.npy']
     # paths = ['./table/skew_2.npy']
     # end_time = 1362096000

@@ -14,7 +14,7 @@ We implement STUM and STUBRIN with python 3.7 on the Ubuntu. You need to install
 ### Content
 
 * data：
-  * table：The 10w(100k) test dataset, containing three synthetic datasets (uniform, normal, skew), and the nyct real dataset. The number 1 indicates the condition used to construct, the number 2 indicates the update condition.
+  * table：The test dataset, containing three synthetic datasets (uniform, normal, skew), and the nyct real dataset. The number 1 indicates the condition used to construct, the number 2 indicates the update condition.
   * index：After processing, the original dataset is downscaled and sorted by Geohash.
   * query：Query conditions, containing point search conditions, range search conditions and k-nearest neighbour search conditions for the three datasets.
   * create_data.py：Data processing code, including data cleansing of nyct datasets, generation of synthetic datasets, etc.

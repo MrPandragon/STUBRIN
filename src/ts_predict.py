@@ -23,12 +23,11 @@ warnings.simplefilter('ignore', RuntimeWarning)
 
 class TimeSeriesModel:
     """
-    时空序列预测模型：statsmodels或Keras实现，服务于TSUM
-    1. F（cdf）的预测模型是时空序列预测（Spatial-Temporal Series Model，sts_model）
-    2. n（max_key）的预测模型是时空序列预测（Temporal Series Model，ts_model）
-    两者分别由多种不同的预测算法实现（TSResult的实现类）
+    prediction model of spatial-temporal series: stastsmodels or Keras implementation, serving TSUM
+    1. prediction model of F(cdf) is sts_model (Spatial-Temporal Series Model)
+    2. prediction model of n(max_key) is ts_model (Temporal Series Model)
+    both are implemented by multiple different prediction algorithms (subclass of TSResult)
     """
-
     def __init__(self, key_list, model_path, cdfs, type_cdf, max_keys, type_max_key, data_len):
         # for compute
         self.key_list = key_list
@@ -110,15 +109,15 @@ class TSResult:
 
 class ESResult(TSResult):
     """
-    Holt-Winters/三次指数平滑法：趋势 + 季节性， 季节周期=lag
-    1. Brown/一次指数平滑法：无趋势或季节性
-    2. Holt/二次指数平滑法：有趋势，无季节性
-    3. Holt-Winters/三次指数平滑法(趋势方法，季节方法，季节周期=lag)：有趋势和季节性
+    Holt-Winters/thrid exponential smoothing: trend + seasonal, seasonal period=lag
+    1. Brown/first exponential smoothing: no trend or seasonal
+    2. Holt/second exponential smoothing: trend, no seasonal
+    3. Holt-Winters/thrid exponential smoothing(trend, seasonal, seasonal period=lag): trend and seasonal
     grid search:
-    1. 趋势方法：[加法, 乘法]
-    2. 季节方法：[加法, 乘法]
-    加法对应线性: add/additive的结果相同
-    乘法对应指数: mul/multiplicative的结果相同
+    1. trend: [add, mul]
+    2. seasonal: [add, mul]
+    add corresponds to linear: add/additive have the same result
+    mul corresponds to exponential: mul/multiplicative have the same result
     """
 
     def __init__(self, lag, predict_step, model_path):
@@ -189,13 +188,13 @@ class ESResult(TSResult):
 
 class SARIMAResult(TSResult):
     """
-    季节性ARIMA
-    1. ARMA(p, q)：无趋势或季节性
-    2. ARIMA(p, d, q)：有趋势，无季节性
-    3. SARIMA(p, d, q, P, D, Q, S=lag)：有趋势和季节性
+    seasonal ARIMA
+    1. ARMA(p, q)：no trend or seasonal
+    2. ARIMA(p, d, q)：trend, no seasonal
+    3. SARIMA(p, d, q, P, D, Q, S=lag)：trend and seasonal
     grid search:
-    1. 趋势：pdq
-    2. 季节：PQD
+    1. trend: pdq
+    2. seasonal: PQD
     """
 
     def __init__(self, lag, predict_step, model_path):
@@ -252,8 +251,8 @@ class SARIMAResult(TSResult):
         # acf_list = acf(data, nlags=10)
         # pacf_list = pacf(data, nlags=10)
         #       AR(p)         MA(q)            ARMA(p,q)
-        # ACF   拖尾           截尾+q阶后为0     拖尾+q阶后为0
-        # PACF  截尾+p阶后为0   拖尾             拖尾+p阶后为0
+        # ACF   trailing      truncation+q      trailing+q
+        # PACF  truncation+p   trailing         trailing+p
         # plot_acf(data, lags=10).show()
         # plot_pacf(data, lags=10).show()
         data = self.init_data(data)
@@ -279,8 +278,8 @@ class RNNResult(TSResult):
     """
     RNN
     grid search:
-    1. 模型结构：激活函数、第一层神经元数量、第一层dropout比例、第二层神经元数量、第二层dropout比例
-    2. 训练参数：学习率、批大小
+    1. model structure: activation, unit1, unit2, dropout1, dropout2
+    2. train parameters: learning_rate, batch_size
     """
 
     def __init__(self, lag, predict_step, model_path):
@@ -405,8 +404,8 @@ class LSTMResult(TSResult):
     """
     LSTM
     grid search:
-    1. 模型结构：激活函数、第一层神经元数量、第一层dropout比例、第二层神经元数量、第二层dropout比例
-    2. 训练参数：学习率、批大小
+    1. model structure: activation, unit1, unit2, dropout1, dropout2
+    2. train parameters: learning_rate, batch_size
     """
 
     def __init__(self, lag, predict_step, model_path):
@@ -484,7 +483,7 @@ class LSTMResult(TSResult):
             return self.predict(pre_x), 1
 
     def get_err(self, test_x, test_y):
-        # ERROR: loss里的mse和实际计算的mse有差距
+        # ERROR: mse in loss and actual mse have difference
         mae = sum(sum([abs(pre - true)
                        for pre, true in
                        zip(correct_max_key(self.model.predict(test_x)), test_y)])) / test_y.size
@@ -531,8 +530,8 @@ class GRUResult(TSResult):
     """
     GRU
     grid search:
-    1. 模型结构：激活函数、第一层神经元数量、第一层dropout比例、第二层神经元数量、第二层dropout比例
-    2. 训练参数：学习率、批大小
+    1. model structure: activation, unit1, unit2, dropout1, dropout2
+    2. train parameters: learning_rate, batch_size
     """
 
     def __init__(self, lag, predict_step, model_path):
@@ -610,7 +609,7 @@ class GRUResult(TSResult):
             return self.predict(pre_x), 1
 
     def get_err(self, test_x, test_y):
-        # ERROR: loss里的mse和实际计算的mse有差距
+        # ERROR: mse in loss and actual mse have difference
         mae = sum(sum([abs(pre - true)
                        for pre, true in
                        zip(correct_max_key(self.model.predict(test_x)), test_y)])) / test_y.size
@@ -655,7 +654,7 @@ class GRUResult(TSResult):
 
 class VARResult(TSResult):
     """
-    向量AR(p)： 有趋势，无季节性
+    vector AR(p)：with trend, no seasonal
     y_t = const_trend + y_t-1 @ w1 + y_t-2 @ w2 + ...
     model consists of {const_trend, w1, w2, ...}, with shape of (1 + lag * width, width)
     grid search:
@@ -685,7 +684,7 @@ class VARResult(TSResult):
         try:
             model = VAR(train_data).fit(maxlags=self.lag, verbose=False, trend='c')
         except ValueError:
-            # 数据异常，只能放弃趋势
+            # error of data, only can give up trend
             try:
                 self.model = VAR(train_data).fit(maxlags=self.lag, verbose=False, trend='n')
             except LinAlgError:
@@ -738,12 +737,12 @@ class VARResult(TSResult):
 
 class VSARIMAResult(TSResult):
     """
-    向量ARIMA
-    1. VAR(p)：无趋势或季节性
-    2. VARMA(p, q)：有趋势，无季节性
+    vector ARIMA
+    1. VAR(p): no trend or seasonal
+    2. VARMA(p, q): trend, no seasonal
     grid search:
-    1. 趋势：pq
-    ERROR: data.shape是[31,100]时报错，但[31,2]时不报错
+    1. trend: pq
+    ERROR: data.shape is [31,100] will raise error, but [31,2] will not
     grid search:
     """
 
@@ -828,8 +827,8 @@ class FCLSTMResult(TSResult):
     """
     FC-LSTM
     grid search:
-    1. 模型结构：激活函数、第一层神经元数量、第一层dropout比例、第二层神经元数量、第二层dropout比例
-    2. 训练参数：学习率、批大小
+    1. model structure: activation, unit1, unit2, dropout1, dropout2
+    2. train parameters: learning_rate
     """
 
     def __init__(self, lag, predict_step, width, model_path):
@@ -910,7 +909,7 @@ class FCLSTMResult(TSResult):
             return self.predict(pre_x), 1
 
     def get_err(self, test_x, test_y):
-        # ERROR: loss里的mse和实际计算的mse有差距
+        # ERROR: mse in loss and actual mse have difference
         # mse = history.history['val_loss'][-1]
         pres = correct_cdf(self.model.predict(test_x).reshape(test_x.shape[0] * self.predict_step, self.width))
         trues = test_y.reshape(test_x.shape[0] * self.predict_step, self.width)
@@ -957,8 +956,8 @@ class ConvLSTMResult(TSResult):
     """
     ConvLSTM
     grid search:
-    1. 模型结构：激活函数、第一层神经元数量、第一层dropout比例、第二层神经元数量、第二层dropout比例
-    2. 训练参数：学习率、批大小
+    1. model structure: activation1, activation2, filter1, filter2, dropout1, dropout2, kernal_size
+    2. train parameters: learning_rate, batch_size
     """
 
     def __init__(self, lag, predict_step, width, model_path):
@@ -996,15 +995,17 @@ class ConvLSTMResult(TSResult):
               activation1, activation2, filter1, filter2, dropout1, dropout2, kernal_size,
               learning_rate, batch_size, is_plot=False):
         """
-        filters: 卷积核数量
-        kernel_size: 卷积核大小
-        strides: 卷积核往右和往下移动的步长
-        padding: 处理边界的策略，valid表示不处理边界，输出shape会变小；same表示处理边界，输出shape和输入shape一致
-        return_sequences: 是否返回中间序列，true表示输出所有输出，false表示只输出最后一个时间的输出
+        filters: number of convolutional filters
+        kernel_size: size of the convolutional kernel
+        strides: step size of the convolutional kernel moving right and down
+        padding: strategy for processing boundaries, valid means no processing of boundaries, output shape will be smaller;
+                    same means processing boundaries, output shape is consistent with input shape
+        return_sequences: whether to return the intermediate sequence, true means output all outputs, false means only output the output of the last
         """
         start_time = time.time()
-        # 1. ConvLSTM编码-LSTM+Dense解码
-        # ConvLSTM1D编码，Flatten压扁后RepeatVector重复predict_step次，LSTM给重复次数之间施加时间特征，Dense还原每次的shape
+        # 1. code of ConvLSTM-LSTM+Dense code
+        # ConvLSTM1D encoding, Flatten squash and RepeatVector repeats predict_step times,
+        # LSTM applies temporal features between repetitions, and Dense restores the shape each time
         # self.model = Sequential([
         #     ConvLSTM1D(activation=activation1, filters=filter1, kernel_size=kernal_size, strides=1,
         #                input_shape=(self.lag, self.width, 1), padding='same', return_sequences=True),
@@ -1018,7 +1019,7 @@ class ConvLSTMResult(TSResult):
         #     TimeDistributed(Dense(self.width))
         # ])
 
-        # 2. ConvLSTM编码-Reshape+Conv2D解码
+        # 2. code by ConvLSTM - Reshape + Conv2Dcode
         self.model = Sequential([
             ConvLSTM1D(activation=activation1, filters=filter1, kernel_size=kernal_size, strides=1,
                        input_shape=(self.lag, self.width, 1), padding='same', return_sequences=False),
@@ -1077,7 +1078,6 @@ class ConvLSTMResult(TSResult):
             return self.predict(pre_x), 1
 
     def get_err(self, test_x, test_y):
-        # ERROR: loss里的mse和实际计算的mse有差距
         # mse = history.history['val_loss'][-1]
         pres = self.model.predict(test_x).reshape(test_x.shape[0] * self.predict_step, self.width)
         trues = test_y.reshape(test_x.shape[0] * self.predict_step, self.width)
@@ -1101,7 +1101,7 @@ class ConvLSTMResult(TSResult):
         # kernal_sizes = [3, 6, 9, 12, 15]
         kernal_sizes = [9]
         # learning_rates = [0.01, 0.001, 0.0001]
-        learning_rates = [0.01]  # lr0.001对应bs2-4，lr0.01对应bs16-32
+        learning_rates = [0.01]  # lr0.001 for bs2-4，lr0.01 for bs16-32
         # batch_sizes = [1, 4, 16, 64]
         batch_sizes = [32]
         pool = multiprocessing.Pool(processes=thread)

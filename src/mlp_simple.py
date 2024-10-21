@@ -5,12 +5,13 @@ import tensorflow as tf
 
 
 class MLPSimple:
+
     """
-    基于MLP的学习模型（Learned Model）：Keras实现
-    区别于MLP:
-    1. 不做任何的中间数据持久化，包括日志/checkpoint
-    2. 不使用retrain和threshold来提高单个模型的精度
-    3. 模型fit后只使用最后一个epoch的参数，而不是最优参数
+    based on MLP learning model (Learned Model): Keras implementation
+    Different from MLP:
+    1. Do not do any intermediate data persistence, including log/checkpoint
+    2. Do not use retrain and threshold to improve the accuracy of a single model
+    3. After the model is fit, only the parameters of the last epoch are used, not the optimal parameters
     """
 
     def __init__(self, train_x, train_x_min, train_x_max, train_y, train_y_min, train_y_max,
@@ -89,9 +90,10 @@ class MLPSimple:
 
     def batch_predict(self):
         """
-        分batch predict来减少内存占用
-        避免一次性redict形成size(self.train_x) * 1的tensor造成内存溢出
+        Predict in batches to reduce memory usage
+        Avoid the formation of a size(self.train_x) * 1 tensor at once to cause memory overflow
         """
+
         train_x_len = len(self.train_x)
         step = 10000
         pres = np.empty(shape=(0, 1))

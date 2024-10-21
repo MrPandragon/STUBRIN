@@ -1,6 +1,6 @@
 class SpatialIndex:
     """
-    空间索引基础类
+    base class for spatial index
     """
     def __init__(self, name):
         self.name = name

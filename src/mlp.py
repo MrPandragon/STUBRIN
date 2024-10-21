@@ -11,7 +11,7 @@ from matplotlib import pyplot as plt
 
 class MLP:
     """
-    基于MLP的学习模型（Learned Model）：Keras实现
+    Base on MLP learning model: Keras implement
     """
 
     def __init__(self, model_path, model_key, train_x, train_x_min, train_x_max, train_y, train_y_min, train_y_max,
@@ -134,7 +134,8 @@ class MLP:
         end_time = time.time()
         self.logging.info("Model key: %s, Train time: %s" % (self.model_key, end_time - start_time))
 
-    # 区别：simple结尾的函数用于模型的重训练
+
+    # difference: simple function is used for retrain
     def build_simple(self, matrices):
         self.init()
         if matrices:
@@ -173,7 +174,7 @@ class MLP:
 
     def mse_and_err_bound(self, y_true, y_pred):
         """
-        自定义loss，用mse描述拟合程度，最大最小误差描述误差范围
+        define loss function, use mse to describe fitting degree, use max and min err to describe err range
         """
         # y_pred_clip = tf.keras.backend.clip(y_pred, 0, 1)
         # diff_clip = y_true - y_pred_clip
@@ -186,8 +187,8 @@ class MLP:
 
     def batch_predict(self):
         """
-        分batch predict来减少内存占用
-        避免一次性redict形成size(self.train_x) * 1的tensor造成内存溢出
+        predict by batch to minimize memory usage
+        avoid predict all data at once to avoid memory overflow like size(self.train_x) * 1 tensor
         """
         train_x_len = len(self.train_x)
         step = 10000
