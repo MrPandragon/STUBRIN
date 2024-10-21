@@ -10,9 +10,9 @@ from src.proposed_sli.ipusli import IPUSLI
 from src.proposed_sli.stusli import STUSLI
 
 """
-实验探究：STUSLI的所有实验
-1. 对比不同预测步长f、溢出桶初始化大小bs、空间粒度c下，STUSLI的整体性能
-2. 对比IPUSLI/DTUSLI/STUSLI的整体性能
+experiment：STUM
+1. Comparing the overall performance of STUM with different prediction step f, overflow bucket initialization size bs, and cdf-width c
+2. Compare IPUM/DTUM/STUM的performance
 """
 if __name__ == '__main__':
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"

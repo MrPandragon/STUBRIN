@@ -26,10 +26,11 @@ class Geohash:
 
     def encode(self, lng, lat):
         """
-        计算point的geohash_int
-        1. 经纬度都先根据region归一化到0-1，然后缩放到0-2^self.dim_bits
-        2. 使用merge_bits把整数的经纬度合并，并转为int，merge的时候是先lat后int，因此顺序是左下、右下、左上、右上
-        优化: zorder.pack->int(merge_bits):6->1
+        Calculate point's geohash_int
+        1. Latitude and longitude are both first normalized to 0-1 based on region, then scaled to 0-2^self.dim_bits
+        2. Use merge_bits to merge integer latitude and longitude and convert to int. merge is done
+        with lat first and int second, so the order is bottom left, bottom right, top left, top right
+        Optimization: zorder.pack->int(merge_bits):6->1
         """
         lng_zoom = round((lng - self.region.left) * self.max_num / self.region_width)
         lat_zoom = round((lat - self.region.bottom) * self.max_num / self.region_height)
@@ -37,11 +38,12 @@ class Geohash:
 
     def decode(self, geohash_int):
         """
-        计算geohash_int的point
-        1. 使用split_bits分开geohash_int为整数的经纬度
-        2. 反归一化经纬度，并且round到指定精度
-        注意：使用load_index_from_file后，geohash_int转化的point不一定=计算geohash_int的原始point，因为保留有效位数的point和geohash_int是多对一的
-        如果要一对一，则encode的入口point和decode的出口point都不要用round
+        Calculate the point of geohash_int
+        1. Use split_bits to separate geohash_int into integers for latitude and longitude
+        2. Inverse normalize latitude and longitude, and round to the specified precision.
+        Note: after using load_index_from_file, the point transformed by geohash_int does not necessarily = the original point used to compute geohash_int,
+        because the point and geohash_int that preserve the number of significant digits is many-to-one
+        If you want one-to-one, don't use round for both encode's entry point and decode's exit point
         """
         lng_zoom, lat_zoom = self.split_bits(geohash_int)
         lng = lng_zoom * self.region_width / self.max_num + self.region.left
@@ -53,14 +55,14 @@ class Geohash:
 
         # binary_string = bin(int1)[2:].rjust(self.dim_bits, '0')
 
-        # # 打印 int1 和生成的二进制字符串长度
+        # # Prints int1 and the length of the resulting binary string.
         # print(f"int1: {int1}, binary_string: {binary_string}, length: {len(binary_string)}")
         #
-        # # 检查是否超过了预期长度
+        # # Check if the expected length is exceeded
         # if len(binary_string) > self.dim_bits:
         #     print(f"Warning: binary_string length exceeds {self.dim_bits}: {binary_string}")
 
-        # 确保二进制字符串的长度与切片长度一致
+        # Ensure that the length of the binary string matches the length of the slice
         self.geohash_template[1::2] = bin(int1)[2:].rjust(self.dim_bits, '0')
 
         # binary_string_1 = bin(int2)[2:].rjust(self.dim_bits, '0')
@@ -73,7 +75,8 @@ class Geohash:
 
     def batch_merge_bits(self, int_range1, int_range2, diff_dim_bits, range_size):
         """
-        优化: merge_bits需要range_size次单维度geohash计算，batch后只需要宽*高次单维度geohash计算
+        Optimization: merge_bits requires range_size sub-single dimensional geohash,
+        batch only requires width*height sub-single dimensional geohash.
         """
         result = [None] * range_size
         i = 0
@@ -132,7 +135,7 @@ class Geohash:
         lat_length = lat_int2 - lat_int1
         result = self.batch_merge_bits(range(lng_int1, lng_int2), range(lat_int1, lat_int2), diff_dim_bits,
                                        lng_length * lat_length)
-        # 优化：只计算边界点的grid_num，77mil=>6.7mil
+        # Optimization: calculate grid_num only for boundary points，77mil=>6.7mil
         for j in range(lat_length):
             result[j * lng_length][1] += 2
             result[j * lng_length + lng_length - 1][1] += 1
@@ -149,7 +152,7 @@ class Geohash:
     def groupby_and_max(geohash_list: list) -> dict:
         result = {}
         for i in geohash_list:
-            # 优化: 4.55mil->2.93mil
+            # optimization: 4.55mil->2.93mil
             result[i[0]] = result.get(i[0], 0) | i[1]
             # if i[0] not in result.keys():
             #     result[i[0]] = i[1]
@@ -184,8 +187,8 @@ class Geohash:
 class Geohash2:
     """
     source code from pypi: python-geohash
-    encode：如果找不到c的geohash，就执行encode_base32的代码
-    原理：和四叉树一样，经度和维度直接位运算转二进制序列，然后合并
+    encode：If you can't find the geohash for c, execute the code for encode_base32
+    Principle: As with quadtrees, longitude and dimension are directly bitwise converted to binary sequences and then merged.
     """
 
     def encode_base32(self, lng: float, lat: float, precision: int = 12) -> str:
@@ -242,18 +245,18 @@ class Geohash2:
         lnggitude = -5.6
         latitude = 42.6
         hashcode = geohash.encode(latitude, lnggitude, precision=5)
-        latitude, lnggitude = geohash.decode(hashcode, delta=False)  # 解码, 返回中间坐标
-        latitude, lnggitude, latitude_delta, lnggitude_delta = geohash.decode(hashcode, delta=True)  # 解码，返回中间坐标和半径
-        bbox_dict = geohash.bbox(hashcode)  # 边界经纬度，返回四至坐标
-        nergnbors_list = geohash.neighbors(hashcode)  # 8个近邻编码
-        b = geohash.expand(hashcode)  # 拓展编码 = 8个近邻编码和自己
+        latitude, lnggitude = geohash.decode(hashcode, delta=False)  # Decode, return intermediate coordinates
+        latitude, lnggitude, latitude_delta, lnggitude_delta = geohash.decode(hashcode, delta=True)  # Decode, return intermediate coordinates and radius
+        bbox_dict = geohash.bbox(hashcode)  # Boundary latitude and longitude, return quadrant coordinates
+        nergnbors_list = geohash.neighbors(hashcode)  # 8 Nearest Neighbor Codes
+        b = geohash.expand(hashcode)  # Expansion code = 8 nearest neighbor codes and self
 
 
 class Geohash3:
     """
     source code from https://github.com/aseelye/geohash
-    原理：和四叉树一样，经度和维度分别二分获得二进制序列，然后合并
-    modified: 输出base32改成输出二进制
+    Principle: Like a quadtree, binary sequences are obtained by bisecting longitude and dimension separately, and then merging
+    modified: Output base32 to output binary
     """
 
     def get_bits(self, degrees: float, precision: int, range_ends: int) -> str:
@@ -313,7 +316,7 @@ class Geohash3:
 class Geohash4:
     """
     source code from https://github.com/vinsci/geohash
-    原理：和四叉树一样，经度和纬度一起二分，直接形成最终的二进制序列
+    Principle: Like a quadtree, longitude and latitude are dichotomized together to directly form the final binary sequence.
     modified: change geohash code into 2 bit encode
     """
 
@@ -368,7 +371,9 @@ class Geohash4:
         geohash = []
         even = True
         while len(geohash) < precision:
-            if even:  # 本来是经度放偶数位，形成经度维度经度维度，但是下面是从左往右下的，所以先写经度
+            if even:
+                # Originally, longitude was put in even digits to form the longitude dimension longitude dimension,
+                # but the following is down from left to right, so longitude is written first
                 mid = (lng_interval[0] + lng_interval[1]) / 2
                 if lnggitude > mid:
                     geohash += "1"
@@ -390,7 +395,7 @@ class Geohash4:
 
 def compare_with_python_geohash():
     """
-    测试六种Geohash的性能：
+    Testing the performance of six Geohashes:
     Python-Geohash C create time  9.574317932128907e-07
     My geohash create time  4.040763378143311e-06
     Python-Geohash encode32 create time  7.69151210784912e-06

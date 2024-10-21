@@ -8,9 +8,9 @@ from src.proposed_sli.stusli import STUSLI
 from src.proposed_sli.stubrin import STUBRIN
 
 """
-实验探究：对比启用或不启用tcrm下stubrin/stusli的整体性能
-1. 误差阈值控制机制：不同误差阈值（tel、tef、ten）下，学习模型和预测模型的性能对比
-2. 历史增量学习机制：以随机初始化权重和历史模型为起点，学习模型的性能变化
+Experiment: Comparing the overall performance of stubrin/stusli with and without tcrm enabled
+1. Error Threshold Control Mechanism: Performance Comparison of Learning Models and Predictive Models under Different Error Thresholds (tel, tef, ten)
+2. Historical delta learning mechanism: starting with randomly initialized weights and a historical model, learning model performance changes
 """
 if __name__ == '__main__':
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"

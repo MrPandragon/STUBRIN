@@ -26,7 +26,7 @@ class Point:
 
     def near(self, other):
         """
-        近似相等，只要整数部分一致即可
+        Approximate equality, as long as the integer parts agree
         :param other:
         :return:
         """
@@ -37,7 +37,7 @@ class Point:
 
     def distance(self, other):
         """
-        计算两点距离
+        Calculate the distance between two points
         :param other:
         :return: distance
         """
@@ -46,7 +46,7 @@ class Point:
 
     def distance_pow(self, other):
         """
-        计算两点距离的平方
+        Calculate the square of the distance between two points
         :param other:
         :return: distance ** 2
         """
@@ -55,10 +55,10 @@ class Point:
 
 def intersect(window, other, cross=False):
     """
-    a和b相交：两个矩形中心点的xy距离 <= 两个矩形xy边长之和
-    a包含b：两个矩形中心点的xy距离 <= 两个矩形xy边长之差(a-b)
-    # b包含a：两个矩形中心点的xy距离 <= 两个矩形xy边长之差(b-a)
-    :param cross: 是否返回相交部分的region
+    a and b intersect: xy distance between centers of two rectangles <= sum of xy side lengths of two rectangles
+    a contains b: xy distance between centers of two rectangles <= difference between xy lengths of two rectangles (a-b)
+    b contains a: xy distance between centers of two rectangles <= difference between xy lengths of two rectangles (b-a)
+    :param cross: whether return the region of intersect part
     :return: 1=intersect, 2=self contain other, 3=other contain self
     """
     center_distance_x = abs(window[2] + window[3] - other[2] - other[3])
@@ -165,10 +165,13 @@ class Region:
 
     def get_bits_by_region_and_precision(self, precision):
         """
-        从range和数据精度计算morton的bit，最终效果是不重复数据的z不重复
-        原理是：不重复数据个数 < region的最短边/10^-precision < 能表示的不重复z个数pow(2, bit)
+        Calculating the bit of morton from range and data precision, the end effect is that
+        z is not repeated for non-repeating data
+        Principle: number of non-repeating data < shortest edge of region/10^-precision < number of non-repeating z's
+        that can be represented pow(2, bit)
         => bit = ceil(log2(limit/10^-precision))
-        +1是因为后续希望region的角点也能计算z，因此精度+1，来保证region必能把point区分开
+        The +1 is due to the fact that we want the region's corners to be able to compute z as well,
+        so the precision is +1 to make sure that the region will be able to distinguish the points.
         :param precision:
         :return:
         """
@@ -177,9 +180,12 @@ class Region:
 
     def get_max_depth_by_region_and_precision(self, precision):
         """
-        区别在于精度不加1，来保证最小节点的region宽度>0.000001且再分裂一次就开始小于了
-        从range和数据精度计算morton的bit，最终效果是不重复数据的z不重复
-        原理是：不重复数据个数 < region的最短边/10^-precision < 能表示的不重复z个数pow(2, bit)
+        The difference is that the precision is not increased by 1 to ensure that the region width of the smallest node
+        is >0.000001 and starts to be less than once it splits again
+        Calculating the bit of morton from range and data precision,
+        the end effect is that z is not repeated for non-repeating data
+        Principle: number of non-repeating data < shortest edge of region/10^-precision < number of non-repeating z's
+        that can be represented pow(2, bit)
         => bit = ceil(log2(limit/10^-precision))
         :param precision:
         :return:
@@ -189,7 +195,7 @@ class Region:
 
     def get_min_distance_pow_by_point_list(self, point: list):
         """
-        计算点到region的距离，如果点在region内，则为0
+        Calculate the distance from the point to the region, or 0 if the point is within the region
         :param point:
         :return:
         """
@@ -244,7 +250,8 @@ class Region:
 
     def clip_region(self, region, precision):
         """
-        把region剪到自己的范围内，precision是为了右上角会超出编码长度，所以往左下偏移
+        Clip the REGION to its own range, the PRECISION is offset to the lower left in order that
+        the upper right corner will exceed the length of the encoding
         """
         if region[0] < self.bottom:
             region[0] = self.bottom
@@ -308,7 +315,7 @@ def total_size(o, handlers={}, verbose=False):
 
 def binary_search_duplicate(nums, field, x, left, right):
     """
-    二分查找 + 对象 + 允许重复
+    Binary Search + Objects + Allow Duplicates
     """
     result = []
     while left <= right:
@@ -333,8 +340,8 @@ def binary_search_duplicate(nums, field, x, left, right):
 
 def binary_search_less_max(nums, field, x, left, right):
     """
-    二分查找 + 找比x小的最大值
-    优化: 循环->二分:15->1
+    Bisection + Find the maximum value smaller than x.
+    Optimize: loop->bis:15->1
     """
     while left <= right:
         mid = (left + right) // 2
@@ -349,7 +356,7 @@ def binary_search_less_max(nums, field, x, left, right):
 
 def binary_search_less_max_duplicate(nums, x, left, right):
     """
-    二分查找 + 不超过x的最大值 + 允许重复
+    Bisection + Maximum value of x not to be exceeded + Repeats allowed
     """
     while left <= right:
         mid = (left + right) // 2
@@ -367,8 +374,8 @@ def binary_search_less_max_duplicate(nums, x, left, right):
 
 def biased_search_duplicate(nums, field, x, mid, left, right):
     """
-    二分查找 + 对象 + biased
-    如果pre不在[left, right]里，会变慢
+    bisection + object + biased
+    If pre is not in [left, right], it will be slowed down
     """
     result = []
     while left <= right:
@@ -393,7 +400,7 @@ def biased_search_duplicate(nums, field, x, mid, left, right):
 
 def biased_search_less_max_duplicate(nums, field, x, mid, left, right):
     """
-    二分查找 + 对象 + biased + 不超过x的最大值 + 允许重复
+    bisection + object + biased + maximum value not exceeding x + duplicates allowed
     """
     while left <= right:
         if nums[mid][field] == x:
@@ -411,7 +418,7 @@ def biased_search_less_max_duplicate(nums, field, x, mid, left, right):
 
 def biased_search_almost(nums, field, x, mid, left, right):
     """
-    二分查找 + 对象 + biased + 查找不超过x的数量 + 允许重复
+    bisection + objects + biased + find no more than x + allow duplicates
     """
     result = []
     left_store = left
@@ -442,7 +449,7 @@ def biased_search_almost(nums, field, x, mid, left, right):
 
 def interpolation_search_less_max(nums, field, x, left, right):
     """
-    插入查找 + 对象
+    Insert Find + Object
     """
     while left < right:
         mid = left + (right - left) * (x - nums[left]) / (nums[right] - nums[left])
@@ -465,7 +472,7 @@ def partition(nums, field, left, right):
 
 def quick_sort(nums, field, left, right):
     """
-    快速排序
+    Rapid sort
     """
     if left < right:
         m = partition(nums, field, left, right)
@@ -475,7 +482,7 @@ def quick_sort(nums, field, left, right):
 
 def quick_sort_n(nums, field, n, left, right):
     """
-    快速排序使得前n个数为最小数
+    Rapid sort such that the first n numbers are the smallest number
     """
     if left < right:
         m = partition(nums, field, left, right)

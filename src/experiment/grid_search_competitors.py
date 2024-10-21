@@ -11,7 +11,7 @@ from src.proposed_sli.slibs import SLIBS
 from src.sli.zm_index import ZMIndex
 
 """
-实验探究：对比不同超参下RT/PRQT/KDT/BRINS/ZM/SLIBS的构建性能、存储成本和检索时间
+Experiment: comparing the build performance, storage cost and query time of RT/PRQT/KDT/BRINS/ZM/SLIBS under different hyperparameters
 """
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))

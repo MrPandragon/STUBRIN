@@ -5,9 +5,9 @@ from src.experiment.common_utils import Distribution, load_data, data_precision,
 from src.utils.geohash_utils import Geohash
 
 """
-实验探究：单独测试多维排序的时间
-1. 将数据集由%s转化为%s_SORTED
-2. 后续实验直接使用%s_SORTED构建索引，并在构建时间上加上多维排序的时间
+Experimental: time to test multidimensional sorting alone
+1. Convert dataset from %s to %s_SORTED
+2. Subsequent experiments use %s_SORTED directly to build the index and add the time of multidimensional sorting to the build time
 """
 
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
