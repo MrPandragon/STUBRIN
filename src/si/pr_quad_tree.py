@@ -20,7 +20,7 @@ ITEMS_PER_PAGE = int(PAGE_SIZE / ITEM_SIZE)
 
 class PRQuadTree(SpatialIndex):
     """
-    点分四叉树（Point Range Quadtree，PR Quadtree）
+    Point Range Quadtree，PR Quadtree
     Implement from the paper The quadtree and related hierarchical data structures
     """
 
@@ -43,10 +43,11 @@ class PRQuadTree(SpatialIndex):
 
     def insert_node(self, point, node):
         """
-        插入元素
-        1.判断是否已分裂，已分裂的选择适合的子节点，插入；
-        2.未分裂的查看过载和树高，过载且树高未满的分裂节点，重新插入；
-        3.未过载的直接添加
+        Insert element
+        1. Determine whether it has been split or not, and if it has been split, select a suitable child node and insert;
+        2. Unsplit check overload and tree height,
+        split nodes that are overloaded and not full tree height and reinsert them;
+        3. Unoverloaded direct addition
         :param node:
         :param point:
         """
@@ -73,9 +74,9 @@ class PRQuadTree(SpatialIndex):
 
     def split_node(self, node):
         """
-        分裂节点
-        1.通过父节点获取子节点的深度和范围
-        2.生成四个节点，挂载到父节点下
+        split-node
+        1.Get the depth and range of the child node through the parent node
+        2.Generate four nodes and mount them under the parent node
         """
         y_center = (node.region.up + node.region.bottom) / 2
         x_center = (node.region.left + node.region.right) / 2
@@ -88,7 +89,7 @@ class PRQuadTree(SpatialIndex):
         for item in node.items:
             self.insert_node(item, node)
 
-        # 清空父节点的element
+        # Clear the element of the parent node
         node.items = []
 
     def create_child_node(self, node, bottom, up, left, right):
@@ -99,9 +100,10 @@ class PRQuadTree(SpatialIndex):
 
     def delete(self, point, node=None):
         """
-        删除元素
-        1. 遍历元素列表，删除对应元素
-        2. 检查兄弟象限元素总数，不超过最大量时组合兄弟象限
+        Delete element
+        1. Iterate through the list of elements and delete the corresponding element
+        2. Check the total number of elements in the sibling quadrant
+        and combine the sibling quadrants if the maximum number is not exceeded
         """
         combine_flag = False
         if node is None:
@@ -134,9 +136,9 @@ class PRQuadTree(SpatialIndex):
 
     def combine_node(self, node):
         """
-        合并节点
-        1. 遍历四个子象限的点，添加到象限点列表
-        2. 释放子象限的内存
+        merge node
+        1. Iterate over the points in the four sub-quadrants and add to the list of quadrant points
+        2. Freeing Memory in Sub-Quadrants
         """
         node.is_leaf = 1
         node.items = node.LB.items + node.RB.items + node.LU.items + node.RU.items
@@ -167,7 +169,7 @@ class PRQuadTree(SpatialIndex):
 
     def search_node(self, point, node=None):
         """
-        找到point所在的node
+        Find the node where the point is located
         :param point:
         :param node:
         :return:
@@ -217,7 +219,9 @@ class PRQuadTree(SpatialIndex):
             result.extend([item.key for item in node.items if region.contain_and_border_by_point(item)])
         else:
             self.io_cost += 1
-            # 所有的or：region的四至点刚好在子节点的region上，因为split的时候经纬度都是向上取整，所以子节点的重心在右和上
+            # All or:region quadruple arrivals are just above the child node's region,
+            # and since latitude and longitude are rounded upward when splitting,
+            # the child node's center of gravity is to the right and above
             if node.LB.region.contain(Point(region.left, region.bottom)):
                 self.range_search_by_iter(Region(region.bottom, min(node.LB.region.up, region.up),
                                          region.left, min(node.LB.region.right, region.right)),
@@ -246,14 +250,14 @@ class PRQuadTree(SpatialIndex):
 
     def knn_query_single_t2d(self, knn):
         """
-        自上而下
-        代码参考：https://github.com/diana12333/QuadtreeNN
-        1.用root node初始化stack，nearest_distance和point_heap分别为正无穷和空
-        2.循环：当stack非空
-        2.1.如果节点距离够：node.region和point的距离不超过nearest_distance
-        2.1.1.如果node is_leaf，则遍历items，用距离够的item更新point_heap，同时更新nearest_distance
-        2.1.2.如果node not_leaf，则把child放入stack
-        3.返回result里的所有key
+        top-down
+        reference：https://github.com/diana12333/QuadtreeNN
+        1.Initialize stack with root node, nearest_distance and point_heap are positive infinity and null
+        2.Loop: when stack is not empty
+        2.1.If the node distance is enough: the distance between node.region and point does not exceed nearest_distance
+        2.1.1.If node is_leaf, iterate through the items, update point_heap with the item that is far enough away, and update nearest_distance as well.
+        2.1.2.If node not_leaf, put child into stack
+        3.Returns all the keys in result
         """
         point = Point(knn[0], knn[1])
         n = knn[2]
@@ -280,11 +284,12 @@ class PRQuadTree(SpatialIndex):
 
     def knn_query_single(self, knn):
         """
-        自下而上
-        1.先找到point所在的节点，初始化nearest_distance和point_heap
-        2.后续操作和自上而下一致，但是由于nearest_distance被初始化，后续遍历可以减少大量节点的距离判断
-        检索时间从0.099225优化到0.006712
-        待优化: stack改成iter并测试可否进一步加速
+        top-down
+        1.First find the node where point is located, initialize nearest_distance and point_heap
+        2.Subsequent operations are consistent with top-down, but since nearest_distance is initialized,
+        subsequent traversals can reduce distance judgments for a large number of nodes
+        Search time optimized from 0.099225 to 0.006712
+        To be optimized: change stack to iter and test if it can be accelerated further.
         """
         point = Point(knn[0], knn[1])
         n = int(knn[2])
@@ -304,7 +309,7 @@ class PRQuadTree(SpatialIndex):
                 nearest_distance = heapq.nsmallest(1, point_heap)[0]
         while len(stack):
             cur = stack.pop(-1)
-            # 跳过point所在节点的判断
+            # Skip the judgment of the node where point is located
             if cur == point_node:
                 continue
             if cur.region.within_distance_pow(point, -nearest_distance[0]):
@@ -325,7 +330,7 @@ class PRQuadTree(SpatialIndex):
 
     def save(self):
         """
-        以DFS的顺序把tree保存为list
+        Save the tree as a list in the order of DFS
         """
         node_list = []
         item_list = []

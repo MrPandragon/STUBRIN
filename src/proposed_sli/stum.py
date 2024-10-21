@@ -24,11 +24,13 @@ ITEMS_PER_PAGE = int(PAGE_SIZE / ITEM_SIZE)
 
 class STUSLI(SLIBS):
     """
-    时空预测学习型索引（Spatial-Tempo updatable Spatial Learned Index，STUSLI）
-    1. 基本思路：提出时空预测更新方法（Spatial-Tempo predicted Update Method，STUM），应用于SLIBS
-    2. STUM的间接预测：
-    2.1. 空间分布分解为排列F（cdf）和密度n（max_key），分别用时空序列预测和时间序列预测完成预测，
-    2.2. 将预测结果组合未来空间分布，改造增量区的数据结构，提供类似哈希索引的方法来检索其上的增量数据
+    Spatial-Tempo updatable Method, STUM
+    1. apply on SLIBS
+    2. Indirect prediction of STUM:
+    2.1. The spatial distribution is decomposed into an arrangement F (cdf) and a density n (max_key),
+    and the prediction is accomplished using spatio-temporal series prediction and time series prediction
+    2.2. Combine the predictions into a future spatial distribution and transform the data structure of the delta area
+    to provide a hash-like index to retrieve the delta data on it
     """
     def __init__(self, model_path=None):
         super().__init__(model_path)
@@ -233,7 +235,7 @@ class STUSLI(SLIBS):
                 update_list[j] = delta_index
                 if leaf_node.index:
                     leaf_node.index.extend(delta_index)
-                    leaf_node.index.sort(key=lambda x: x[2])  # 优化：有序数组合并->sorted:2.5->1
+                    leaf_node.index.sort(key=lambda x: x[2])  # Optimization: ordered array merge->sorted:2.5->1
                 else:
                     leaf_node.index = delta_index
                 # IO1: merge data

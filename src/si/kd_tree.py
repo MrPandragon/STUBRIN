@@ -17,7 +17,7 @@ NODES_PER_RA = int(PAGE_SIZE / NODE_SIZE)
 
 class KDTree(SpatialIndex):
     """
-    KD树（KD-tree）
+    KD-tree
     Implement from Multidimensional binary search trees used for associative searching
     """
 
@@ -39,8 +39,9 @@ class KDTree(SpatialIndex):
     def insert(self, points):
         for point in points:
             self.insert_single(point)
-        # balance: 将树调整回平衡状态，检索效率会提升
-        # 理论上要在insert和delete时处理最后被更新的node和所有上层node，但是balance太耗时，此处旨在整体insert是操作一次
+        # balance: Adjusting the tree back to equilibrium will improve retrieval efficiency
+        # Theoretically, the last updated node and all upper nodes should be processed during insert and delete,
+        # but balance is too time-consuming, and the aim here is that the overall insert is operated once.
         self.root_node.balance()
 
     def delete(self, point):
@@ -48,7 +49,7 @@ class KDTree(SpatialIndex):
 
     def build_node(self, values, value_len, axis):
         """
-        通过del减少内存占用
+        Reduce memory footprint with del
         """
         median_key = value_len // 2
         values.sort(key=lambda x: x[axis])
@@ -70,10 +71,10 @@ class KDTree(SpatialIndex):
         return node
 
     def build(self, data_list):
-        # 方法1：先排序后划分节点
+        # Method 1: Sort and then divide the nodes
         data_list = [(data[0], data[1], data[3]) for data in data_list]
         self.root_node = self.build_node(data_list, len(data_list), 0)
-        # 方法2：不停插入
+        # Method 2: Non-stop insertion
         # data_list = np.insert(data_list, np.arange(len(data_list)), axis=1)
         # self.root_node = KDNode(value=data_list[0], axis=0)
         # self.insert(data_list[1:])
@@ -109,7 +110,7 @@ class KDTree(SpatialIndex):
 
     def range_query_single(self, window):
         """
-        优化：stack->当前方法:2->1
+        Optimization: stack->current method:2->1
         """
         result = []
         window = [window[2], window[3], window[0], window[1]]
@@ -144,13 +145,14 @@ class KDTree(SpatialIndex):
 
     def knn_query_single(self, knn):
         """
-        参考：https://blog.csdn.net/qq_38019633/article/details/89555909
-        1. 从root node开始深度优先遍历
-        2. 先判断当前node value和value的大小关系，如果=大，则顺序为right-自己-left，否则left-自己-right
-        3. 对前节点，直接遍历
-        4. 对自己，直接加进优先队列，并且更新距离
-        5. 对后节点，可以借助和node的分割线的距离判断，加速过滤
-        优化：stack->iter->当前方法:时间比为50->50->0.1
+        Reference:https://blog.csdn.net/qq_38019633/article/details/89555909
+        1. Depth-first traversal from root node
+        2. First determine the size relationship between the current node value and value,
+            if = large, then the order is right-self-left, otherwise left-self-right
+        3. For the predecessor node, direct traversal
+        4. For self, add directly to the priority queue and update the distance
+        5. The filtering can be accelerated by judging the distance between the node and the split line of the node.
+        Optimization: stack->iter->current method:time ratio is 50->50->0.1
         """
         value = knn[:-1]
         n = int(knn[-1])
@@ -159,7 +161,7 @@ class KDTree(SpatialIndex):
         return [itr[1] for itr in result_heap]
 
     def knn_query_node(self, node, value, nearest_distance, result_heap, n):
-        # 右-自己-左
+        # right-self-left
         if value[node.axis] >= node.value[node.axis]:
             if node.right:
                 nearest_distance = self.knn_query_node(node.right, value, nearest_distance, result_heap, n)
@@ -173,7 +175,7 @@ class KDTree(SpatialIndex):
                 nearest_distance = -heapq.nsmallest(1, result_heap)[0][0]
             if node.left and value[node.axis] - nearest_distance < node.value[node.axis]:
                 nearest_distance = self.knn_query_node(node.left, value, nearest_distance, result_heap, n)
-        else:  # 左-自己-右
+        else:  # left-self-right
             if node.left:
                 nearest_distance = self.knn_query_node(node.left, value, nearest_distance, result_heap, n)
             dst = distance_value_2d(value, node.value)
@@ -271,7 +273,7 @@ class KDNode:
         """
         Insert a value into the node.
         """
-        # 重复数据处理：插入时先放到右侧
+        # Duplicate data handling: insert first to the right side
         if value[self.axis] >= self.value[self.axis]:
             if self.right is None:
                 axis = self.axis + 1 if self.axis + 1 < DIM_NUM else 0
@@ -416,7 +418,7 @@ def contain_value(window, value):
     return sum([window[d * 2] <= value[d] <= window[d * 2 + 1] for d in range(DIM_NUM)]) == DIM_NUM
 
 
-# 2d下的函数效率要比多维快5倍
+# Functions under 2d are 5 times more efficient than multidimensional
 def equal_value_2d(value1, value2):
     return value1[0] == value2[0] and value1[1] == value2[1]
 
@@ -467,16 +469,17 @@ def main():
         index.logging.info("*************start %s************" % index_name)
         start_time = time.time()
         build_data_list = load_data(Distribution.NYCT_10W, 0)
-        # 按照pagesize=4096, read_ahead=256, size(pointer)=4, size(x/y)=8, node按照DFS的顺序密集存储在page中
-        # tree存放所有node的axis、数据量、左右节点指针、data:
-        # node size=1+4+4*2+(8*2+4)=33，单page存放4096/33=124node，单read_ahead读取256*124=31744node
-        # 15层节点数=2^(15-1)=16384，之后每一层对应1次IO
-        # 10w数据，[]参数下：
-        # 树高=log2(10w)=17, IO=前15层IO+后17-15层IO=1~2+2=3~4
-        # 索引体积=33*10w
-        # 1451w数据，[]参数下：
-        # 树高=log2(1451W)=24, IO=前15层IO+后24-15层IO=1~2+9=10~11
-        # 索引体积=33*1451w
+        # pagesize=4096, read_ahead=256, size(pointer)=4, size(x/y)=8,
+        # node is densely stored in pages in the order of DFS
+        # The tree holds the axis, amount of data, left and right node pointers, data: for all nodes:
+        # node size=1+4+4*2+(8*2+4)=33，1 page store 4096/33=124node，1 read_ahead store 256*124=31744node
+        # Number of nodes at layer 15 = 2^(15-1) = 16384, each subsequent layer corresponds to 1 IO
+        # 10w data:
+        # Tree height = log2(10w) = 17, IO = first 15 layers of IO + second 17-15 layers of IO = 1~2+2 = 3~4
+        # index size =33*10w
+        # 1451w data：
+        # index size =log2(1451W)=24, IO=first 15 layers of IO + second 24-15 layers of IO=1~2+9=10~11
+        # index size =33*1451w
         index.build(data_list=build_data_list)
         index.save()
         end_time = time.time()

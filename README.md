@@ -40,7 +40,7 @@ pip install -r ./requirements.txt
 ```shell
 python ./src/proposed_sli/slibs.py
 python ./src/proposed_sli/slbrin.py
-python ./src/proposed_sli/stusli.py
+python ./src/proposed_sli/stum.py
 python ./src/proposed_sli/stubrin.py
 ```
 

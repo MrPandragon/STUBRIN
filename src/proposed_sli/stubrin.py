@@ -23,8 +23,8 @@ ITEMS_PER_PAGE = int(PAGE_SIZE / ITEM_SIZE)
 
 class STUBRIN(SLBRIN):
     """
-    动态空间块范围学习型索引（Spatio-Temporal Updatable Learned Block Range Index）
-    1. 基本思路：结合SBRIN和STUM 
+    Spatio-Temporal Updatable Learned Block Range Index
+    1. Basic idea: combining SBRIN and STUM
     """
 
     def __init__(self, model_path=None):
@@ -258,7 +258,7 @@ class STUBRIN(SLBRIN):
         del self.index_entries[hr_key]
         del self.history_ranges[hr_key]
         del self.history_ranges_append[hr_key]
-        child_ranges.reverse()  # 倒序一下，有助于insert
+        child_ranges.reverse()  # Reverse the order to help insert
         for child_range in child_ranges:
             self.history_ranges.insert(hr_key, child_range[0])
             self.history_ranges_append.insert(hr_key, child_range[1])
@@ -304,7 +304,8 @@ class STUBRIN(SLBRIN):
         max_keys = []
         start_io = self.io_cost
         start_time = time.time()
-        offset = 0  # update_hr中若出现split_hr，会导致后续hr_key向后偏移，因此用offset来记录偏移量
+        offset = 0  # The presence of split_hr in update_hr causes subsequent hr_keys to be offset backward,
+        # so offset is recorded with offset
         for i in range(0, hr_num):
             hr_append = self.history_ranges_append[i + offset]
             if hr_append.delta_model.data_len:
@@ -521,7 +522,7 @@ class STUBRIN(SLBRIN):
                     right_key = hr.number
                     right_key_append = len(hr_append.delta_index)
                 # 5 filter all the point of scope[min_key/max_key] by range.contain(point)
-                # 优化: region.contain->compare_func不同位置的点做不同的判断: 638->474mil
+                # Optimization: region.contain->compare_func does different judgments for points at different locations: 638->474mil
                 result.extend([ie[4] for ie in hr_data[left_key:right_key] if compare_func(ie)])
                 self.io_cost += math.ceil((r_bound2 - l_bound1) / ITEMS_PER_PAGE)
                 delta_index_len = 0
@@ -536,7 +537,7 @@ class STUBRIN(SLBRIN):
         1. get the nearest key of query point
         2. get the nn points to create range query window
         3. filter point by distance
-        耗时操作：knn_query_hr/nn predict/精确过滤: 6.1/30/40.5
+        Time-consuming operations: knn_query_hr/nn predict/exact filter: 6.1/30/40.5
         """
         x, y, k = knn
         k = int(k)
@@ -597,7 +598,7 @@ class STUBRIN(SLBRIN):
             return [tp[1] for tp in tp_list]
         dst_pow = dst ** 0.5
         window = [y - dst_pow, y + dst_pow, x - dst_pow, x + dst_pow]
-        # 处理超出边界的情况
+        # Handling of out-of-bounds situations
         self.meta.geohash.region.clip_region(window, self.meta.geohash.data_precision)
         gh1 = self.meta.geohash.encode(window[2], window[0])
         gh2 = self.meta.geohash.encode(window[3], window[1])

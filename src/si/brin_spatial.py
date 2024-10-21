@@ -18,7 +18,7 @@ ITEM_SIZE = 8 * 2 + 4  # 20
 
 class BRINSpatial(SpatialIndex):
     """
-    空间块范围索引（BRIN-Spatial）
+    BRIN-Spatial
     Implement from Indexing the pickup and drop-off locations of NYC taxi trips in PostgreSQL - lessons from the road
     """
 
@@ -31,21 +31,21 @@ class BRINSpatial(SpatialIndex):
                             format="%(asctime)s - %(levelname)s - %(message)s",
                             datefmt="%Y/%m/%d %H:%M:%S %p")
         self.logging = logging.getLogger(self.name)
-        # meta page由meta组成
+        # A meta page consists of meta
         # version
         # pages_per_range
         # last_revmap_page
-        # datas_per_range: 优化计算所需：每个blk的数据容量
-        # datas_per_page: 优化计算所需：每个page的数据容量
-        # is_sorted: 增加: 优化查询，对blk内的数据按照geohash排序
-        # geohash: 增加，is_sorted=True时使用
+        # datas_per_range: Required for optimization calculations: data capacity per blk
+        # datas_per_page: Required for optimization calculations: data capacity per page
+        # is_sorted: Add, optimized query to sort data in blk by geohash
+        # geohash: Add, use when is_sorted=True
         self.meta = meta
-        # revmap pages由多个revmap分页组成
-        # 忽略revmap，pages找block的过程，通过blk的id和pagesperrange直接完成
+        # revmap pages consist of multiple revmap pages.
+        # Ignore revmap, the process of pages finding blocks is done directly via blk's id and pagesperrange
         # self.revmaps = revmaps
-        # regular pages由多个block分页组成
-        # blknum: pages偏移 = id * pagesperrange，为便于检索，直接存id
-        # value: 改动：blk的MBR
+        # Regular pages consist of multiple block pages
+        # blknum: pages offset = id * pagesperrange, for easy query, store id directly
+        # value: alter: blk's MBR
         self.block_ranges = block_ranges
         # for compute
         self.io_cost = 0
@@ -76,7 +76,7 @@ class BRINSpatial(SpatialIndex):
         points = points.tolist()
         for point in points:
             self.insert_single(point)
-        # 如果整体插入已经结束，则主动更新tmp br的value
+        # If the overall insertion has ended, proactively update the value of tmp br
         self.sum_up_tmp_blk()
 
     def create_tmp_blk(self):
@@ -115,7 +115,7 @@ class BRINSpatial(SpatialIndex):
 
     def point_query_blk(self, point):
         """
-        找到可能包含xy的blk
+        Find the blk that may contain xy
         """
         return [blk
                 for blk in self.block_ranges
@@ -123,8 +123,8 @@ class BRINSpatial(SpatialIndex):
 
     def range_query_blk(self, window):
         """
-        找到可能和window相交的blk及其空间关系(相交=1/window包含value=2)
-        包含关系可以加速查询，即包含意味着blk内所有数据都符合条件
+        Find the blk that may intersect window and its spatial relationship (intersect=1/contains=2)
+        The containment relationship speeds up queries, containment means that all data within the blk is qualified
         """
         return [[blk, intersect(window, blk.value)]
                 for blk in self.block_ranges]
@@ -158,12 +158,12 @@ class BRINSpatial(SpatialIndex):
 
     def point_query_single(self, point):
         """
-        1. 根据xy找到可能存在的blks
-        2. 精确过滤blks对应磁盘范围内的数据
+        1. Finding possible blks based on xy
+        2. Accurate filtering of data within the range of disks corresponding to blks
         """
-        # 1. 根据xy找到可能存在的blks
+        # 1. Finding possible blks based on xy
         blks = self.point_query_blk(point)
-        # 2. 精确过滤blks对应磁盘范围内的数据
+        # 2. Accurate filtering of data within the range of disks corresponding to blks
         if self.meta.is_sorted:
             gh = self.meta.geohash.encode(point[0], point[1])
             result = []
@@ -180,23 +180,23 @@ class BRINSpatial(SpatialIndex):
 
     def range_query_single(self, window):
         """
-        1. 根据window找到相交和包含的blks
-        2. 精确过滤相交的blks对应磁盘范围内的数据
-        3. 直接添加包含的blks对应磁盘范围内的数据
+        1. Find intersecting and containing blks based on window
+        2. Accurate filtering of data within disk ranges corresponding to intersecting blks
+        3. Directly add the contained blks corresponding to the disk range of data
         """
-        # 1. 根据window找到相交和包含的blks
+        # 1. Find intersecting and containing blks based on window
         target_blks = self.range_query_blk(window)
         result = []
         for target_blk in target_blks:
             if target_blk[1] == 0:
                 continue
-            # 3. 直接添加包含的blks对应磁盘范围内的数据
+            # 3. Directly add the contained blks corresponding to the disk range of data
             elif target_blk[1] == 2:
                 blk = target_blk[0]
                 self.io_cost += self.meta.pages_per_range
                 result.extend([ie[-1]
                                for ie in self.index_entries[blk.blknum:blk.blknum + self.meta.datas_per_range]])
-            # 2. 精确过滤相交的blks对应磁盘范围内的数据
+            # 2. Accurate filtering of data within disk ranges corresponding to intersecting blks
             else:
                 blk = target_blk[0]
                 self.io_cost += self.meta.pages_per_range
@@ -321,13 +321,13 @@ class BRINSpatial(SpatialIndex):
         structure_size = brins_meta.npy + brins_blk.npy
         ie_size = index_entries.npy
         """
-        # 实际上：
-        # meta一致为os.path.getsize(os.path.join(self.model_path, "brins_meta.npy"))-128=4*11=44
-        # blk一致为os.path.getsize(os.path.join(self.model_path, "brins_blk.npy"))-128-64=blk_size*(8*4+4)=blk_size*36
-        # revmap为none
-        # index_entries一致为os.path.getsize(os.path.join(self.model_path, "index_entries.npy"))-128=data_len*(8*2+4)=data_len*20
-        # 理论上：
-        # revmap存blk id/pointer=meta.size*(2+4)=meta.size*6
+        # in fact：
+        # meta consistently is os.path.getsize(os.path.join(self.model_path, "brins_meta.npy"))-128=4*11=44
+        # blk consistently is os.path.getsize(os.path.join(self.model_path, "brins_blk.npy"))-128-64=blk_size*(8*4+4)=blk_size*36
+        # revmap is none
+        # index_entries consistently is os.path.getsize(os.path.join(self.model_path, "index_entries.npy"))-128=data_len*(8*2+4)=data_len*20
+        # theoretically：
+        # revmap store blk id/pointer=meta.size*(2+4)=meta.size*6
         blk_size = len(self.block_ranges)
         return 44 + \
                blk_size * 36 + \
@@ -375,14 +375,15 @@ def main():
         start_time = time.time()
         # build_data_list = load_data(Distribution.NYCT_10W, 0)
         build_data_list = load_data(data_distribution, 0)
-        # 按照pagesize=4096, read_ahead=256, size(pointer)=4, size(x/y)=8, brin整体连续存, meta一个page, blk分页存
-        # blk体积=blknum/value=4+4*8=36，一个page存113个blk
-        # revmap体积=blkid+blk指针=2+4=6，一个page存682个blk
-        # data体积=x/y/key=8*2+4=20，一个page存204个data
-        # 10w数据，[5]参数下：大约有10w/5/204=99blk
+        # pagesize=4096, read_ahead=256, size(pointer)=4, size(x/y)=8,
+        # brin global contiguous storage, meta store in 1 page, blk paged storage
+        # blk size = blknum/value=4+4*8=36，1 page store 113 blk
+        # revmap size =blkid+blk pointer=2+4=6，1 page store 682 blk
+        # data size =x/y/key=8*2+4=20，1 page store 204 data
+        # 10w data, under the parameter[5]：10w/5/204=99blk
         # 1meta page，99/113=1regular page，99/682=1revmap page，10w/204=491data page
-        # 单次扫描IO为读取brin+读取blk对应ie=1+0
-        # 索引体积=xy索引+meta+blk+revmap
+        # Single scan IO for read brin + read blk corresponds to ie=1+0
+        # Index volume = xy index + meta + blk + revmap
         index.build(data_list=build_data_list,
                     pages_per_range=5,
                     is_sorted=True,

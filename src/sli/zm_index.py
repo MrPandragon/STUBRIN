@@ -24,7 +24,7 @@ ITEMS_PER_PAGE = int(PAGE_SIZE / ITEM_SIZE)
 
 class ZMIndex(SpatialIndex):
     """
-    Z曲线学习型索引（Z-order model，ZM）
+    Z-order model，ZM
     Implement from Learned index for spatial queries
     """
 
@@ -209,7 +209,8 @@ class ZMIndex(SpatialIndex):
     def get_weight(self, key):
         """
         calculate weight from key
-        uniform分布的斜率理论上为1，密集分布则大于1，稀疏分布则小于1
+        The slope of the uniform distribution is theoretically 1,
+        more than 1 for dense distributions and less than 1 for sparse distributions
         """
         node_key = self.get_leaf_node(key)
         leaf_model = self.rmi[-1][node_key].model
@@ -509,10 +510,14 @@ class ZMIndex(SpatialIndex):
 
     def avg_io_cost(self):
         """
-        假设查询条件和数据分布一致，io=获取meta的io+获取stage1 node的io+获取stage2 node的io+获取data的io+获取update data的io
-        一次read_ahead可以拿512个node，因此前面511个stage2 node的io是1，后面统一为2
-        data io由model误差范围决定，update data io由model update部分的数据量决定
-        先计算单个node的node io和data io，然后乘以node的数据量，最后除以总数据量，来计算整体的平均io
+        Assuming that the query conditions and data distribution are consistent,
+        io = io for getting meta + stage1 node + stage2 node + data + update data
+        A read_ahead takes 512 nodes at a time, so the io of the first 511 stage2 nodes is 1, and the later ones are 2.
+        The data io is determined by the error margin of the model,
+        and the update data io is determined by the amount of data in the update part of the model.
+        First calculate the node io and data io of a single node,
+        then multiply by the node's data volume,
+        and finally divide by the total data volume to calculate the overall average io.
         """
         stage2_model_num = len(
             [node.model for node in self.rmi[-1] if node.model]) if self.non_leaf_stage_len > 0 else 0
@@ -594,7 +599,8 @@ class NN(MLP):
     def __init__(self, model_path, model_key, train_x, train_y, is_new, weight, core, train_step, batch_size,
                  learning_rate, use_threshold, threshold, retrain_time_limit):
         self.name = "ZM Index NN"
-        # 当只有一个输入输出时，整数的key作为y_true会导致loss中y_true-y_pred出现类型错误：
+        # When there is only one input and output,
+        # an integer key as y_true causes a type error in y_true-y_pred in loss:
         # TypeError: Input 'y' of 'Sub' Op has type float32 that does not match type int32 of argument 'x'.
         train_x, train_x_min, train_x_max = normalize_input(np.array(train_x).astype("float"))
         train_y, train_y_min, train_y_max = normalize_output(np.array(train_y).astype("float"))
@@ -606,7 +612,8 @@ class NN(MLP):
 class NNSimple(MLPSimple):
     def __init__(self, train_x, train_y, weight, core, train_step, batch_size, learning_rate):
         self.name = "ZM Index NN"
-        # 当只有一个输入输出时，整数的key作为y_true会导致loss中y_true-y_pred出现类型错误：
+        # When there is only one input and output,
+        # an integer key as y_true causes a type error in y_true-y_pred in loss:
         # TypeError: Input 'y' of 'Sub' Op has type float32 that does not match type int32 of argument 'x'.
         train_x, train_x_min, train_x_max = normalize_input(np.array(train_x).astype("float"))
         train_y, train_y_min, train_y_max = normalize_output(np.array(train_y).astype("float"))
@@ -637,7 +644,7 @@ class AbstractNN:
         """
         calculate weight
         """
-        # delta当前选8位有效数字，是matrix的最高精度
+        # delta currently selects 8 valid digits and is the highest precision of matrix
         delta = 0.00000001
         y1 = normalize_input_minmax(input_key, self.input_min, self.input_max)
         y2 = y1 + delta
@@ -650,7 +657,8 @@ class AbstractNN:
         xs_len = len(xs)
         self.output_max = xs_len - 1
         if xs_len:
-            # 数据量太多，predict很慢，因此用均匀采样得到100个点来计算误差
+            # if data is too big, then prediction will be slow,
+            # use uniform sampling to get 100 points to calculate the error
             if xs_len > 100:
                 step_size = xs_len // 100
                 sample_keys = [i for i in range(0, step_size * 100, step_size)]
@@ -673,10 +681,12 @@ class AbstractNN:
 
 class Array:
     """
-    模拟python数组：
-    1. 初始化：1个Page
-    2. 扩容：每次扩容增大原来的1/8
-    3. 插入：检查是否需要扩容，右移插入点后的所有数据，返回移动的数据数量
+    Simulate python arrays：
+    1. Initialization: 1 Page
+    2. Expansion: 1/8 of the original size per expansion
+    3. Insert: check if expansion is needed,
+    move all data after the insertion point to the right,
+    return the amount of data moved
     """
 
     def __init__(self, size=ITEMS_PER_PAGE, max_key=-1, index=None):

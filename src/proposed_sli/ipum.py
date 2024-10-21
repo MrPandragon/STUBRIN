@@ -20,8 +20,9 @@ ITEMS_PER_PAGE = int(PAGE_SIZE / ITEM_SIZE)
 
 class IPUSLI(SLIBS):
     """
-    就地更新空间学习型索引（In-place Update Spatial Learned Index，IPUSLI）
-    1. 基本思路：在SLIBS的基础上应用FITing-tree（Fiting-tree: A data-aware index structure）的就地更新方法（In-place Update Method，IPUM）
+    In-place Update Spatial Learned Index，IPUSLI
+    1. Basic idea: In-place Update Method (IPUM) applying FITing-tree (Fiting-tree: A data-aware index structure)
+    on top of SLIBS.
     """
     def __init__(self, model_path=None):
         super(IPUSLI, self).__init__(model_path)

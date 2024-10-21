@@ -25,10 +25,10 @@ ITEMS_PER_PAGE = int(PAGE_SIZE / ITEM_SIZE)
 
 class SLBRIN(SpatialIndex):
     """
-    空间块范围学习型索引（Spatial Learned Block Range Index，SLBRIN），论文见SLBRIN: A Spatial Learned Index Based on BRIN
-    1. 基本思路：在BRIN-Spatial的基础上解决空间分区问题和跳跃性问题
-    1.1. 提出空间等差分区方法（Spatial Equidistant Partitioning Method）优化块范围的分区结果
-    1.2. 结合空间位置码（Spatial Location Code）和学习索引（Learned Index）优化空间检索策略
+    Spatial Learned Block Range Index，SLBRIN
+    1. Basic idea: solving the spatial partitioning problem and the jumping problem on the basis of BRIN-Spatial
+    1.1. Proposing Spatial Equidistant Partitioning Method to Optimize Block-Wide Partitioning Results
+    1.2. Optimizing Spatial Retrieval Strategies by Combining Spatial Location Code and Learned Index
     """
 
     def __init__(self, model_path=None):
@@ -40,30 +40,30 @@ class SLBRIN(SpatialIndex):
                             format="%(asctime)s - %(levelname)s - %(message)s",
                             datefmt="%Y/%m/%d %H:%M:%S %p")
         self.logging = logging.getLogger(self.name)
-        # meta page由meta组成
+        # A meta page consists of meta
         # version
-        # last_hr: 新增：最后一个hr的指针
-        # last_cr: 新增：最后一个hr的指针
-        # threshold_number: 新增：hr的数据范围，也是hr分裂的索引项数量阈值
-        # threshold_length: 新增：hr分裂的geohash长度阈值
-        # threshold_err: 新增：hr重新训练model的误差阈值
-        # threshold_summary: 新增：cr的数据范围，也是cr统计mbr的索引项数量阈值
-        # threshold_merge: 新增：cr合并的cr数量阈值
-        # geohash: 新增：对应L = geohash.sum_bits，索引项geohash编码实际长度
+        # last_hr: Added: pointer to last hr
+        # last_cr: Added: pointer to last hr
+        # threshold_number: Added: data range for hr, also a threshold for the number of index entries for hr splits
+        # threshold_length: Added: geohash length threshold for hr splits
+        # threshold_err: Added: error threshold for hr retraining mods
+        # threshold_summary: Added: data range for cr and also a threshold for the number of index entries for mbr
+        # threshold_merge: Added: cr number threshold for cr consolidation
+        # geohash: Added: corresponds to L = geohash.sum_bits, the actual length of the index item geohash encoding
         self.meta = None
-        # history range pages由多个hr分页组成
-        # value: 改动：L长度的整型geohash
-        # length: 新增：geohash的实际length
-        # number: 新增：range范围内索引项的数据量
-        # model: 新增：learned indices
-        # state: 新增：状态，1=inefficient
-        # scope: 优化计算所需
-        # value_diff: 优化计算所需：下一个hr value - hr value
+        # History range pages consist of multiple hr pages.
+        # value: Alteration: Integer geohash of length L
+        # length: Added: actual length of geohash
+        # number: Added: amount of data for indexed items in range
+        # model: Added: learned indices
+        # state: Added: 1=inefficient
+        # scope: Optimize the computation required
+        # value_diff: Required for optimization calculation: next hr value - hr value
         self.history_ranges = None
-        # current range pages由多个cr分页组成
-        # value: 改动：mbr
-        # number: 新增：range范围内索引项的数据量
-        # state: 新增：状态，1=full, 2=outdated
+        # current range pages consists of multiple cr pages.
+        # value: Alteration:mbr
+        # number: Added: amount of data for indexed items in range
+        # state: Added: status, 1=full, 2=outdated
         self.current_ranges = None
         # for train
         self.weight = None
@@ -84,7 +84,7 @@ class SLBRIN(SpatialIndex):
               is_new, is_simple, weight, core, train_step, batch_num, learning_rate, use_threshold, threshold,
               retrain_time_limit, thread_pool_size):
         """
-        构建SLBRIN
+        build SLBRIN
         1. order data by geohash
         2. build SLBRIN
         2.1. init hr
@@ -129,9 +129,10 @@ class SLBRIN(SpatialIndex):
                     tmp_r_key = binary_search_less_max(data_list, 2, r_bound, tmp_l_key, r_key)
                     child_list[i] = (value, length, tmp_r_key - tmp_l_key + 1, tmp_l_key, child_regions[i])
                     tmp_l_key = tmp_r_key + 1
-                range_stack.extend(child_list[::-1])  # 倒着放入init中，保持顺序
+                range_stack.extend(child_list[::-1])  # Put it in init backwards, keep it in order.
             else:
-                # 把不需要分裂的hr加入结果list，加入的时候顺序为[左上，右下，左上，右上]的逆序，因为堆栈
+                # Add the hr's that don't need to be split to the result list, adding them in reverse order of
+                # [top-left, bottom-right, top-left, top-right] because the stack
                 range_list.append(cur)
         # 2.3. reorganize index entries
         self.index_entries = [data_list[r[3]: r[3] + r[2]] for r in range_list]
@@ -159,7 +160,7 @@ class SLBRIN(SpatialIndex):
         mp_dict = multiprocessing.Manager().dict()
         for hr_key in range(self.meta.last_hr + 1):
             hr = self.history_ranges[hr_key]
-            # 训练数据为左下角点+分区数据+右上角点
+            # Training data is bottom left point + partitioned data + top right point
             inputs = [ie[2] for ie in self.index_entries[hr_key]]
             inputs.insert(0, hr.value)
             inputs.append(hr.value + hr.value_diff)
@@ -188,7 +189,7 @@ class SLBRIN(SpatialIndex):
         self.get_merge_outdated_cr()
 
     def insert(self, points):
-        # 重置计数和计时属性
+        # Reset counting and timing properties
         self.sum_up_full_cr_time = 0.0
         self.merge_outdated_cr_time = 0.0
         self.retrain_inefficient_model_time = 0.0
@@ -196,7 +197,9 @@ class SLBRIN(SpatialIndex):
         points = points.tolist()
         for point in points:
             self.insert_single(point)
-        # 理论上重训练发生在get_retrain_inefficient_model，但TS和TM一旦变小，重训练的次数就指数上升，因此可以在每次插入任务结束时进行
+        # Theoretically retraining occurs at get_retrain_inefficient_model,
+        # but the number of retrains rises exponentially once TS and TM become small,
+        # so it can be done at the end of each insertion task
         self.post_retrain_inefficient_model()
 
     def create_cr(self):
@@ -206,7 +209,7 @@ class SLBRIN(SpatialIndex):
 
     def get_sum_up_full_cr(self):
         """
-        监听last cr的number，如果超过ts_summary，则设为full状态，并追加新的cr
+        Listen for the number of last cr, if it exceeds ts_summary, set it to full and append a new cr.
         """
         if self.current_ranges[-1].number >= self.meta.threshold_summary:
             self.current_ranges[-1].state = 1
@@ -215,7 +218,7 @@ class SLBRIN(SpatialIndex):
 
     def post_sum_up_full_cr(self):
         """
-        获取所有full的cr，统计MBR
+        Get all full's cr, stats MBR
         """
         # full_crs = [cr for cr in self.current_ranges if cr.state == 1]
         cr_key = self.meta.last_cr
@@ -232,7 +235,7 @@ class SLBRIN(SpatialIndex):
 
     def get_merge_outdated_cr(self):
         """
-        监听cr数量，如果超过ts_merge(outdated)，则把前ts_merge个cr设为outdated状态
+        Listen to the number of crs, and if it exceeds ts_merge(outdated), set the first ts_merge crs to outdated.
         """
         if self.meta.last_cr >= self.meta.threshold_merge:
             for cr in self.current_ranges[:self.meta.threshold_merge]:
@@ -241,7 +244,7 @@ class SLBRIN(SpatialIndex):
 
     def post_merge_outdated_cr(self):
         """
-        获取所有outdated的cr，合并其内前ts_merge个cr到hr，并删除这些cr对应的对象
+        Get all outdated crs, merge the first ts_merge crs into hr, and delete the objects corresponding to those crs.
         """
         # outdated_crs = [cr for cr in self.current_ranges if cr.state == 2]
         if self.current_ranges[0].state == 2:
@@ -258,10 +261,12 @@ class SLBRIN(SpatialIndex):
             bks = [0] * hr_num
             self.split_data_by_hr(old_data, 0, self.meta.last_hr, 0, old_data_len - 1, bks)
             tmp_bk = 0
-            offset = 0  # update_hr中若出现split_hr，会导致后续hr_key向后偏移，因此用offset来记录偏移量
+            offset = 0  # The presence of split_hr in update_hr causes subsequent hr_keys to be offset backward,
+            # so offset is recorded with offset
             for i in range(hr_num):
                 bk = bks[i]
-                if bk and bk > tmp_bk:  # split中取mid的做法会导致部分右边界出现在前面的hr，因此bk > tmp_bk来过滤这种情况
+                if bk and bk > tmp_bk:  # The practice of taking mid in split causes part of the right boundary
+                    # to appear in the previous hr,
                     offset += self.update_hr(i + offset, old_data[tmp_bk:bk])
                     tmp_bk = bk
             # 3. delete crs/index entries
@@ -285,7 +290,7 @@ class SLBRIN(SpatialIndex):
 
     def get_retrain_inefficient_model(self, hr_key, old_err):
         """
-        在模型更新时，监听误差范围，如果超过ts_err(inefficient)，则设为inefficient状态
+        Listen for error ranges during model updates, and if they exceed ts_err(inefficient), set them to the inefficient state
         """
         hr = self.history_ranges[hr_key]
         if hr.model.max_err - hr.model.min_err > self.meta.threshold_err * old_err:
@@ -295,7 +300,7 @@ class SLBRIN(SpatialIndex):
 
     def retrain_inefficient_model(self, hr_key):
         """
-        重训练单个低效状态的HR
+        Retraining individual inefficiency state HRs
         """
         start_time = time.time()
         hr = self.history_ranges[hr_key]
@@ -321,7 +326,7 @@ class SLBRIN(SpatialIndex):
 
     def post_retrain_inefficient_model(self):
         """
-        重训练所有低效状态的HR
+        Retrain all HRs in inefficient states
         """
         if self.retrain_state:
             for i in range(self.meta.last_hr + 1):
@@ -388,7 +393,7 @@ class SLBRIN(SpatialIndex):
         # 2. replace old hr and data
         del self.index_entries[hr_key]
         del self.history_ranges[hr_key]
-        child_ranges.reverse()  # 倒序一下，有助于insert
+        child_ranges.reverse()  # Reverse the order to help insert
         for child_range in child_ranges:
             self.history_ranges.insert(hr_key, child_range[0])
             self.index_entries.insert(hr_key, child_range[1])
@@ -402,20 +407,20 @@ class SLBRIN(SpatialIndex):
 
     def point_query_hr(self, point):
         """
-        根据geohash找到所在的hr的key
-        1. 计算geohash对应到hr的geohash_int
-        2. 找到比geohash_int小的最大值即为geohash所在的hr
+        Find the key of the hr according to geohash.
+        1. Compute geohash corresponding to hr's geohash_int
+        2. Find the maximum value smaller than geohash_int which is the hr where geohash is located.
         """
         return self.binary_search_less_max(point, 0, self.meta.last_hr)
 
     def range_query_hr(self, point1, point2):
         """
-        根据geohash1/geohash2找到之间所有hr的key以及和window的位置关系
-        1. 通过geohash_int1/geohash_int2找到window对应的所有org_geohash和对应window的position
-        2. 通过前缀匹配过滤org_geohash来找到tgt_geohash
-        3. 根据tgt_geohash分组并合并position
+        Find the key of all hr's between geohash1/geohash2 and their position in relation to the window.
+        1. Find all the org_geohashes corresponding to the window and the corresponding window's position by geohash_int1/geohash_int2
+        2. Filter org_geohash by prefix match to find tgt_geohash
+        3. Group and merge positions according to tgt_geohash
         """
-        # 1. 通过geohash_int1/geohash_int2找到window对应的所有org_geohash和对应window的position
+        # 1.
         hr_key1 = self.binary_search_less_max(point1, 0, self.meta.last_hr)
         hr_key2 = self.binary_search_less_max(point2, hr_key1, self.meta.last_hr)
         if hr_key1 == hr_key2:
@@ -423,8 +428,8 @@ class SLBRIN(SpatialIndex):
         else:
             max_length = max(self.history_ranges[hr_key1].length, self.history_ranges[hr_key2].length)
             org_geohash_list = self.meta.geohash.ranges_by_int(point1, point2, max_length)
-            # 2. 通过前缀匹配过滤org_geohash来找到tgt_geohash
-            # 3. 根据tgt_geohash分组并合并position
+            # 2.
+            # 3.
             size = len(org_geohash_list) - 1
             i = 1
             tgt_geohash_dict = {hr_key1: org_geohash_list[0][1],
@@ -449,25 +454,25 @@ class SLBRIN(SpatialIndex):
                         tgt_geohash_dict[hr_key2] = tgt_geohash_dict[hr_key2] | org_geohash_list[i][1]
                         break
             return tgt_geohash_dict
-            # 前缀匹配太慢：时间复杂度=O(len(window对应的geohash个数)*(j-i))
+            # Prefix matching is too slow: time complexity = O(len(number of geohashes corresponding to window)*(j-i))
 
     def range_query_blk(self, window):
         """
-        找到可能和window相交的cr及其空间关系(相交=1/window包含value=2)
-        包含关系可以加速查询，即包含意味着cr内所有数据都符合条件
+        Find the cr that may intersect window and its spatial relationship (intersect=1/window contains value=2)
+        Containment relationships can speed up queries, i.e., containment means that all data within the cr matches the condition
         """
         return [[cr, intersect(window, cr.value)]
                 for cr in self.current_ranges]
 
     def knn_query_hr(self, center_hr_key, point1, point2, point3):
         """
-        根据geohash1/geohash2找到之间所有hr的key以及和window的位置关系，并基于和point3距离排序
-        1. 通过geohash_int1/geohash_int2找到window对应的所有org_geohash和对应window的position
-        2. 通过前缀匹配过滤org_geohash来找到tgt_geohash
-        3. 根据tgt_geohash分组并合并position
-        4. 计算每个tgt_geohash和point3的距离，并进行降序排序
+        Find the key of all hr's between geohash1/geohash2 and their position in relation to the window and sort them based on the distance from point3
+        1. Find all the org_geohashes corresponding to the window and the corresponding window's position by geohash_int1/geohash_int2
+        2. Filter org_geohash by prefix match to find tgt_geohash
+        3. Group and merge positions according to tgt_geohash
+        4. Calculate the distance between each tgt_geohash and point3 and sort in descending order
         """
-        # 1. 通过geohash_int1/geohash_int2找到window对应的所有org_geohash和对应window的position
+        # step 1
         hr_key1 = self.biased_search_less_max(point1, center_hr_key, 0, center_hr_key)
         hr_key2 = self.biased_search_less_max(point2, center_hr_key, center_hr_key, self.meta.last_hr)
         if hr_key1 == hr_key2:
@@ -475,8 +480,8 @@ class SLBRIN(SpatialIndex):
         else:
             max_length = max(self.history_ranges[hr_key1].length, self.history_ranges[hr_key2].length)
             org_geohash_list = self.meta.geohash.ranges_by_int(point1, point2, max_length)
-            # 2. 通过前缀匹配过滤org_geohash来找到tgt_geohash
-            # 3. 根据tgt_geohash分组并合并position
+            # step 2
+            # step 3
             size = len(org_geohash_list) - 1
             i = 1
             tgt_geohash_dict = {hr_key1: org_geohash_list[0][1],
@@ -500,7 +505,7 @@ class SLBRIN(SpatialIndex):
                     if hr_key1 > self.meta.last_hr:
                         tgt_geohash_dict[hr_key2] = tgt_geohash_dict[hr_key2] | org_geohash_list[i][1]
                         break
-            # 4. 计算每个tgt_geohash和point3的距离，并进行降序排序
+            # step 4
             return sorted([[tgt_geohash,
                             tgt_geohash_dict[tgt_geohash],
                             self.history_ranges[tgt_geohash].scope.get_min_distance_pow_by_point_list(point3)]
@@ -508,13 +513,13 @@ class SLBRIN(SpatialIndex):
 
     def binary_search_less_max(self, x, left, right):
         """
-        二分查找比x小的最大值
-        优化: 循环->二分->最左匹配:15->1->0.75
+        Find the maximum value of a bisector smaller than x
+        Optimize: loop->bisection->leftmost match:15->1->0.75
         """
         while left <= right:
             mid = (left + right) // 2
             if self.history_ranges[mid].value <= x:
-                # 最左匹配
+                # leftmost match
                 if self.meta.last_hr == mid or self.history_ranges[mid + 1].value > x:
                     return mid
                 left = mid + 1
@@ -523,8 +528,8 @@ class SLBRIN(SpatialIndex):
 
     def biased_search_less_max(self, x, mid, left, right):
         """
-        二分查找比x小的最大值，指定初始mid
-        优化: 二分->biased二分:3->1
+        Find the maximum value smaller than x by bisecting, specifying the initial mid
+        Optimize: bisect->biased bisect:3->1
         """
         while left <= right:
             if self.history_ranges[mid].value <= x:
@@ -576,7 +581,7 @@ class SLBRIN(SpatialIndex):
         4. predict min_key/max_key by nn
         5. filter all the point of scope[min_key/max_key] by range.contain(point)
         6. filter cr by mbr
-        耗时操作：range_query_hr/nn predict/精确过滤: 15/24/37.6
+        Time-consuming operation: range_query_hr/nn predict/exact filter: 15/24/37.6
         """
         # 1. compute geohash of window_left and window_right
         gh1 = self.meta.geohash.encode(window[2], window[0])
@@ -620,7 +625,7 @@ class SLBRIN(SpatialIndex):
                     r_bound2 = hr.number
                     right_key = hr.number
                 # 5 filter all the point of scope[min_key/max_key] by range.contain(point)
-                # 优化: region.contain->compare_func不同位置的点做不同的判断: 638->474mil
+                # Optimization: region.contain->compare_func does different judgments for points at different locations: 638->474mil
                 result.extend([ie[4] for ie in hr_data[left_key:right_key] if compare_func(ie)])
                 self.io_cost += math.ceil((r_bound2 - l_bound1) / ITEMS_PER_PAGE)
         # 6. filter cr by mbr
@@ -645,11 +650,11 @@ class SLBRIN(SpatialIndex):
         2. get the nn points to create range query window
         3. filter point by distance
         4. filter cr by mbr
-        耗时操作：knn_query_hr/nn predict/精确过滤: 6.1/30/40.5
+        Time-consuming operations: knn_query_hr/nn predict/exact filter: 6.1/30/40.5
         """
         x, y, k = knn
         k = int(k)
-        # 1. get the nearest key of query point
+        # step 1
         qp_g = self.meta.geohash.encode(x, y)
         qp_hr_key = self.point_query_hr(qp_g)
         qp_hr = self.history_ranges[qp_hr_key]
@@ -663,11 +668,12 @@ class SLBRIN(SpatialIndex):
             r_bound = min(pre - qp_hr.model.min_err, qp_hr.max_key)
             qp_ie_key = biased_search_almost(qp_hr_data, 2, qp_g, pre, l_bound, r_bound)[0]
             tp_ie_list = [qp_hr_data[qp_ie_key]]
-        # 2. get the n points to create range query window
-        # 三种初始结果集选取方法：
-        # 1. 任意选k个
-        # 2. 点查询得到p，在p前后选k/2个
-        # 3. （当前所选方法）点查询得到p，在p前后选k个，dst（初始检索范围）变大，但是跳跃性的干扰变小
+        # step 2
+        # Three initial result set selection methods:
+        # 1. Choose any k
+        # 2. Point query to get p. Pick k/2 before and after p
+        # 3.  point query to get p, select k before and after p. dst (initial search range) becomes larger,
+        # but jump interference becomes smaller
         cur_ie_key = qp_ie_key + 1
         cur_hr_data = qp_hr_data
         cur_hr = qp_hr
@@ -710,7 +716,7 @@ class SLBRIN(SpatialIndex):
             return [tp[1] for tp in tp_list]
         dst_pow = dst ** 0.5
         window = [y - dst_pow, y + dst_pow, x - dst_pow, x + dst_pow]
-        # 处理超出边界的情况
+        # Handling of out-of-bounds situations
         self.meta.geohash.region.clip_region(window, self.meta.geohash.data_precision)
         gh1 = self.meta.geohash.encode(window[2], window[0])
         gh2 = self.meta.geohash.encode(window[3], window[1])
@@ -834,7 +840,7 @@ class SLBRIN(SpatialIndex):
         self.train_step = slbrin_meta[13]
         self.batch_num = slbrin_meta[14]
         self.learning_rate = slbrin_meta[15]
-        # length从int32转int，不然位运算时候会超出限制变为负数
+        # length from int32 to int, otherwise the bitwise operation will exceed the limit and become negative.
         self.history_ranges = [
             HistoryRange(slbrin_hrs[i][0], int(slbrin_hrs[i][1]), slbrin_hrs[i][2], slbrin_models[i], slbrin_hrs[i][3],
                          Region(slbrin_hrs[i][5], slbrin_hrs[i][6], slbrin_hrs[i][7], slbrin_hrs[i][8]),
@@ -849,13 +855,13 @@ class SLBRIN(SpatialIndex):
             crs.append(CurrentRange(region, cr[4], cr[5]))
         self.current_ranges = crs
         index_entries = index_entries.tolist()
-        # 构建hr部分的ies
+        # Build the hr part of the ies
         self.index_entries = []
         offset = 0
         for hr in self.history_ranges:
             self.index_entries.append(index_entries[offset:offset + hr.number])
             offset += hr.number
-        # 构建cr部分的ies
+        # Build the cr part of the ies
         for cr in self.current_ranges:
             self.index_entries.append(index_entries[offset:offset + cr.number])
             offset += cr.number
@@ -868,15 +874,15 @@ class SLBRIN(SpatialIndex):
         # 实际上：
         # meta=os.path.getsize(os.path.join(self.model_path, "slbrin_meta.npy"))-128-64*3=1*2+2*7+4*4+8*4=64
         # hr=os.path.getsize(os.path.join(self.model_path, "slbrin_hrs.npy"))-128-64=hr_len*(1*2+2*1+8*6)=hr_len*52
-        # model一致=os.path.getsize(os.path.join(self.model_path, "slbrin_models.npy"))-128=hr_len*model_size
+        # model=os.path.getsize(os.path.join(self.model_path, "slbrin_models.npy"))-128=hr_len*model_size
         # cr=os.path.getsize(os.path.join(self.model_path, "slbrin_crs.npy"))-128-64=cr_len*(1*1+2*1+8*4)=cr_len*35
         # index_entries=os.path.getsize(os.path.join(self.model_path, "slbrin_data.npy"))-128
         # =hr_len*meta.threshold_number*(8*3+4)
-        # 理论上：
-        # meta只存last_hr/last_cr/5*ts/L=4+4+5*2+1=19
-        # hr只存value/length/number/*model/state=hr_len*(8+1+2+4+1)=hr_len*16
-        # cr只存value/number/state=cr_len*(8*4+2+1)=cr_len*35
-        # index_entries为data_len*(8*3+4)=data_len*28
+        # Theoretically:
+        # meta store last_hr/last_cr/5*ts/L=4+4+5*2+1=19
+        # hr store value/length/number/*model/state=hr_len*(8+1+2+4+1)=hr_len*16
+        # cr store value/number/state=cr_len*(8*4+2+1)=cr_len*35
+        # index_entries is data_len*(8*3+4)=data_len*28
         data_len = sum([hr.number for hr in self.history_ranges]) + sum([cr.number for cr in self.current_ranges])
         hr_len = self.meta.last_hr + 1
         cr_len = self.meta.last_cr + 1
@@ -1050,7 +1056,8 @@ class HistoryRange:
 
     def update_error_range(self, xs):
         if self.number:
-            # 数据量太多，predict很慢，因此用均匀采样得到100个点来计算误差
+            # The amount of data is too much and predict is slow,
+            # so uniform sampling is used to get 100 points to calculate the error
             if self.number > 100:
                 step_size = self.number // 100
                 sample_keys = [i for i in range(0, step_size * 100, step_size)]
@@ -1059,7 +1066,7 @@ class HistoryRange:
             else:
                 xs = np.array([[x[2]] for x in xs])
                 ys = np.arange(self.number)
-            # 优化：单个predict->集体predict:时间比为19:1
+            # Optimization: single predict->collective predict: time ratio is 19:1
             pres = self.model.predicts((xs - self.value) / self.value_diff - 0.5)
             pres[pres < 0] = 0
             pres[pres > 1] = 1
@@ -1085,7 +1092,7 @@ class NN(MLP):
     def __init__(self, model_path, model_key, train_x, train_y, is_new, weight, core, train_step, batch_size,
                  learning_rate, use_threshold, threshold, retrain_time_limit):
         self.name = "SLBRIN NN"
-        # train_x的是有序的，归一化不需要计算最大最小值
+        # The train_x's are ordered and the normalization does not need to compute the max-min values
         train_x_min = train_x[0]
         train_x_max = train_x[-1]
         train_x = (np.array(train_x) - train_x_min) / (train_x_max - train_x_min) - 0.5
@@ -1096,7 +1103,7 @@ class NN(MLP):
                          is_new, weight, core, train_step, batch_size, learning_rate, use_threshold, threshold,
                          retrain_time_limit)
 
-    # 计算err的时候不考虑breakpoints
+    # Calculating err without considering breakpoints
     def get_err(self):
         inputs = self.train_x[1:-1]
         input_len = len(inputs)
@@ -1113,7 +1120,7 @@ class NN(MLP):
 class NNSimple(MLPSimple):
     def __init__(self, train_x, train_y, weight, core, train_step, batch_size, learning_rate):
         self.name = "SLBRIN NN"
-        # train_x的是有序的，归一化不需要计算最大最小值
+        # The train_x's are ordered and the normalization does not need to compute the max-min values
         train_x_min = train_x[0]
         train_x_max = train_x[-1]
         train_x = (np.array(train_x) - train_x_min) / (train_x_max - train_x_min) - 0.5
@@ -1123,7 +1130,7 @@ class NNSimple(MLPSimple):
         super().__init__(train_x, train_x_min, train_x_max, train_y, train_y_min, train_y_max,
                          weight, core, train_step, batch_size, learning_rate)
 
-    # 计算err的时候不考虑breakpoints
+    # Calculating err without considering breakpoints
     def get_err(self):
         inputs = self.train_x[1:-1]
         input_len = len(inputs)
@@ -1144,7 +1151,7 @@ class AbstractNN:
         self.min_err = min_err
         self.max_err = max_err
 
-    # model.predict有小偏差，可能是exp的e和elu的e不一致
+    # model.predict has a small deviation, probably the e of exp and the e of elu don't agree
     def predict(self, x):
         for i in range(self.hl_nums):
             x = relu(np.dot(x, self.matrices[i * 2]) + self.matrices[i * 2 + 1])
@@ -1157,14 +1164,16 @@ class AbstractNN:
 
     def splits(self):
         """
-        将矩阵按照输入切割为四分，只限于隐藏层数=1
+        Cut the matrix into quarters according to the input, limited to hidden layers = 1
         :return:
         """
         w0, b0, w1, b1 = self.matrices
         xbks = [[-0.5], [-0.25], [0], [0.25], [0.5]]
         ybks = self.predicts(xbks)
         m_0 = 0.25 * w0
-        m01 = (-0.375 * w0 + b0).flatten()  # 隐藏层w是(1, 128), b是(128,)，算出来shape变为(1, 128)，所以需要flatten为(128,)
+        m01 = (-0.375 * w0 + b0).flatten()
+        # The hidden layer w is (1, 128), b is (128,) and the calculated shape becomes (1, 128),
+        # so it needs to be flattened to (128,)
         m02 = w1 / (ybks[1] - ybks[0])
         m03 = (b1 - ybks[0]) / (ybks[1] - ybks[0])
         m11 = (-0.125 * w0 + b0).flatten()
@@ -1197,15 +1206,16 @@ def main():
         index.logging.info("*************start %s************" % index_name)
         start_time = time.time()
         build_data_list = load_data(data_distribution, 0)
-        # 按照pagesize=4096, read_ahead=256, size(pointer)=4, size(x/y/g)=8, slbrin整体连续存, meta一个page, br分页存，model(2009大小)单独存
-        # hr体积=value/length/number=16，一个page存256个hr
-        # cr体积=value/number=35，一个page存117个cr
-        # model体积=2009，一个page存2个model
-        # data体积=x/y/g/key=8*3+4=28，一个page存146个data
-        # 10w数据，[1000]参数下：大约有289个cr
+        # pagesize=4096, read_ahead=256, size(pointer)=4, size(x/y/g)=8, slbrin global contiguous storage,
+        # meta is 1 page, br paged store，model(2009)
+        # hr size = value/length/number=16，1 page store 256 hr
+        # cr size = value/number=35，1 page store 117 cr
+        # model size =2009，1 page store 2 model
+        # data size =x/y/g/key=8*3+4=28，1 page store 146 data
+        # 10w，[1000]：289 cr
         # 1meta page，289/256=2hr page，1cr page, 289/2=145model page，10w/146=685data page
-        # 单次扫描IO=读取slbrin+读取对应model+读取model对应索引项=1+1+误差范围/146/256
-        # 索引体积=meta+hrs+crs+model+索引项
+        # Single scan IO = read slbrin + read corresponding mod + read index item of model = 1+1+ error range/146/256
+        # Index size = meta+hrs+crs+model+indexed items
         index.build(data_list=build_data_list,
                     is_sorted=True,
                     threshold_number=10000,

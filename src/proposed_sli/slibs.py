@@ -20,11 +20,12 @@ ITEMS_PER_PAGE = int(PAGE_SIZE / ITEM_SIZE)
 
 class SLIBS(ZMIndex):
     """
-    空间学习型索引基础框架（Basic Structure for Spatial Learned Index，SLIBS）
-    1. 基本思路：先降维+后RMI
-    2. 其他改进：在训练集中采用最大最小值归一化方法和分区边界控制方法，保证分段CDF在段间的单调性
-    2.1. 分区边界提取过程见get_leaf_bound
-    2.2. 分区边界加入过程见p115~123
+    Basic Structure for Spatial Learned Index，SLIBS
+    1. Basic idea: first dimensionality reduction + then RMI
+    2. Other improvements: maximum-minimum normalization method and partition boundary control method
+    are used in the training set to ensure the monotonicity of segmented CDFs between segments
+    2.1. See get_leaf_bound for the partition boundary extraction process.
+    2.2. See p115~123 for partition boundary joining process
     """
 
     def __init__(self, model_path=None):
@@ -168,7 +169,7 @@ class NN(MLP):
     def __init__(self, model_path, model_key, train_x, train_y, is_new, weight, core, train_step, batch_size,
                  learning_rate, use_threshold, threshold, retrain_time_limit):
         self.name = "SLIBS NN"
-        # train_x的是有序的，归一化不需要计算最大最小值
+        # The train_x's are ordered and the normalization does not need to compute the max-min values
         train_x_min = train_x[0]
         train_x_max = train_x[-1]
         train_x = (np.array(train_x) - train_x_min) / (train_x_max - train_x_min) - 0.5
@@ -183,7 +184,7 @@ class NN(MLP):
 class NNSimple(MLPSimple):
     def __init__(self, train_x, train_y, weight, core, train_step, batch_size, learning_rate):
         self.name = "SLIBS NN"
-        # train_x的是有序的，归一化不需要计算最大最小值
+        # The train_x's are ordered and the normalization does not need to compute the max-min values
         train_x_min = train_x[0]
         train_x_max = train_x[-1]
         train_x = (np.array(train_x) - train_x_min) / (train_x_max - train_x_min) - 0.5

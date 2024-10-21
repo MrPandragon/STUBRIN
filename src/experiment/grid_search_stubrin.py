@@ -4,7 +4,7 @@ import shutil
 import time
 
 from src.experiment.common_utils import Distribution, load_query, load_data, copy_dirs, group_data_by_date
-from src.proposed_sli.stusli import STUSLI
+from src.proposed_sli.stum import STUSLI
 from src.proposed_sli.stubrin import STUBRIN
 
 """

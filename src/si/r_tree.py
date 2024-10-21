@@ -13,7 +13,7 @@ PAGE_SIZE = 4096
 
 class RTree(SpatialIndex):
     """
-    R树（R-tree）
+    R-tree
     Implement from pypi: rtree
     """
 
@@ -47,7 +47,7 @@ class RTree(SpatialIndex):
         p = index.Property()
         p.dimension = 2
         p.dat_extension = "data"
-        p.idx_extension = "key"  # key文件好像是缓存文件，并非索引文件
+        p.idx_extension = "key"
         p.storage = index.RT_Disk
         if buffering_capacity:
             p.buffering_capacity = buffering_capacity
@@ -56,7 +56,7 @@ class RTree(SpatialIndex):
         p.leaf_capacity = leaf_node_capacity
         p.index_capacity = non_leaf_node_capacity
         self.index = index.Index(os.path.join(self.model_path, 'rtree'), properties=p, overwrite=True)
-        # self.index = index.RtreeContainer(properties=p)  # 没有直接Index来得快，range_query慢了一倍
+        # self.index = index.RtreeContainer(properties=p)
         self.insert(data_list)
 
     def point_query_single(self, point):
@@ -125,21 +125,25 @@ def main():
         index.logging.info("*************start %s************" % index_name)
         start_time = time.time()
         build_data_list = load_data(data_distribution, 0)
-        # 按照pagesize=4096, read_ahead=256, size(pointer)=4, size(x/y)=8, 一个page存放一个node
-        # leaf node存放xyxy数据、数据指针、指向下一个leaf node的指针
+        # pagesize=4096, read_ahead=256, size(pointer)=4, size(x/y)=8, 1 page store 1 node
+        # leaf node store xyxy data、pointer、Pointer to next leaf node
         # leaf_node_capacity=(pagesize-size(pointer))/(size(x)*4+size(pointer))=(4096-4)/(8*4+4*1)=113
-        # non leaf node存放MBR、指向MBR对应子节点的指针
+        # The non leaf node holds the MBR, a pointer to the corresponding child node of the MBR
         # non_leaf_node_capacity = pagesize/(size(x)*4+size(pointer))=4096/(8*4+4*1)=113
-        # 由于fill_factor的存在，非叶节点数据量在[node_capacity*fill_factor, node_capacity]之间，根节点和叶节点数据量不受约束
-        # 10w数据，[0.7, 113, 113]参数下：
-        # 非叶节点平均数据约为0.85*113=96，数高三层为1-96-leaf，叶节点最多113*113=12769个，最少1*79=79个
-        # 假设数据极端聚集，则叶节点为10w/113个=885，数据均匀分布则10w/113*2=1770
-        # 单次扫描IO=树高=3
-        # 索引体积约=(1+96+叶节点数据量)*4096=(1+96+1770)*4096
-        # 1451w数据，[0.7, 113, 113]参数下：
-        # 树高四层1-96-96*96-leaf，假设数据极端聚集，则叶节点为1451w/113个=128408，数据均匀分布则10w/113*2=256815
-        # 单次扫描IO=树高=4
-        # 索引体积=(1+96+96*96+256815)*4096
+        # Due to the presence of fill_factor, the amount of non-leaf node data is between [node_capacity*fill_factor, node_capacity],
+        # and the amount of root and leaf node data is unbounded
+        # 10w，[0.7, 113, 113]：
+        # The average data of non-leaf nodes is about 0.85*113=96, the number of high three layers is 1-96-leaf,
+        # the maximum number of leaf nodes is 113*113=12,769, the minimum is 1*79=79
+        # The data are uniformly distributed then 10w/113个=885，
+        # The data are uniformly distributed then 10w/113*2=1770
+        # Single scan IO = tree height = 3
+        # index size = (1+96+leafnode)*4096=(1+96+1770)*4096
+        # 1451w，[0.7, 113, 113]：
+        # Tree height 1-96-96*96-leaf，Assuming extreme aggregation，Then the leaf nodes are 1451w/113=128408
+        # The data are uniformly distributed then 10w/113*2=256815
+        # Single scan IO = tree height = 4
+        # index size =(1+96+96*96+256815)*4096
         index.build(data_list=build_data_list,
                     fill_factor=0.7,
                     leaf_node_capacity=113,

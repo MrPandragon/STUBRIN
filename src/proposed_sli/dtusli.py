@@ -19,8 +19,9 @@ ITEMS_PER_PAGE = int(PAGE_SIZE / ITEM_SIZE)
 
 class DTUSLI(SLIBS):
     """
-    增量更新空间学习型索引（Delta Update Spatial Learned Index，DTUSLI）
-    1. 基本思路：在SLIBS的基础上应用FITing-tree（Fiting-tree: A data-aware index structure）的增量更新方法（Delta Update Method，DTUM）
+    Delta Update Spatial Learned Index，DTUSLI
+    1. Basic idea: applying the incremental update method (Delta Update Method, DTUM)
+    of FITing-tree (Fiting-tree: A data-aware index structure) to SLIBS
     """
     def __init__(self, model_path=None):
         super(DTUSLI, self).__init__(model_path)
@@ -97,7 +98,7 @@ class DTUSLI(SLIBS):
                 update_list[j] = 1
                 if leaf_node.index:
                     leaf_node.index.extend(leaf_node.delta_index.index[:leaf_node.delta_index.max_key + 1])
-                    leaf_node.index.sort(key=lambda x: x[2])  # 优化：有序数组合并->sorted:2.5->1
+                    leaf_node.index.sort(key=lambda x: x[2])  # Optimization: ordered array merge->sorted:2.5->1
                 else:
                     leaf_node.index = leaf_node.delta_index.index[:leaf_node.delta_index.max_key + 1]
                 leaf_node.delta_index = Array(self.initial_length)

@@ -6,8 +6,8 @@ import time
 from src.experiment.common_utils import load_data, Distribution, copy_dirs, load_query, filter_data_by_date, \
     group_data_by_date
 from src.proposed_sli.dtusli import DTUSLI
-from src.proposed_sli.ipusli import IPUSLI
-from src.proposed_sli.stusli import STUSLI
+from src.proposed_sli.ipum import IPUSLI
+from src.proposed_sli.stum import STUSLI
 
 """
 experiment：STUM

@@ -7,7 +7,7 @@ from src.experiment.common_utils import Distribution, load_data, load_query, cop
 from src.si.brin_spatial import BRINSpatial
 from src.si.pr_quad_tree import PRQuadTree
 from src.si.r_tree import RTree
-from src.proposed_sli.stusli import STUSLI
+from src.proposed_sli.stum import STUSLI
 from src.proposed_sli.stubrin import STUBRIN
 
 """
