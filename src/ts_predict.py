@@ -129,7 +129,7 @@ class ESResult(TSResult):
         self.err = 0
 
     def init_data(self, data):
-        # ES规定数据必须包含不低于两个周期
+        # ES data must contain no less than two cycles
         if len(data) < 2 * self.lag:
             data.extend(data[-self.lag:])
         return np.array(data)
@@ -357,7 +357,7 @@ class RNNResult(TSResult):
             return self.predict(pre_x), 1
 
     def get_err(self, test_x, test_y):
-        # ERROR: loss里的mse和实际计算的mse有差距
+        # ERROR: There is a difference between the mse in loss and the actually calculated mse.
         mae = sum(sum([abs(pre - true)
                        for pre, true in
                        zip(correct_max_key(self.model.predict(test_x)), test_y)])) / test_y.size

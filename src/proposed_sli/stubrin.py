@@ -470,7 +470,7 @@ class STUBRIN(SLBRIN):
         3. get min_geohash and max_geohash of every hr for different relation
         4. predict min_key/max_key by nn
         5. filter all the point of scope[min_key/max_key] by range.contain(point)
-        耗时操作：range_query_hr/nn predict/精确过滤: 15/24/37.6
+        Time-consuming operations: range_query_hr/nn predict/Precision filtering: 15/24/37.6
         """
         # 1. compute geohash of window_left and window_right
         gh1 = self.meta.geohash.encode(window[2], window[0])

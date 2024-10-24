@@ -166,7 +166,7 @@ class MLP:
     def set_matrices(self, matrices):
         self.model.set_weights(matrices)
 
-    # 对比mse/mae/mae+err_bound，最后选择mse+err_bound
+    # Compare mse/mae/mae+err_bound, and finally select mse+err_bound
     def mse(self, y_true, y_pred):
         diff = y_true - y_pred
         mse_loss = tf.keras.backend.mean(tf.keras.backend.square(diff), axis=-1)
@@ -243,9 +243,9 @@ class MLP:
         new_model_path = os.path.join(self.model_hdf_dir, new_file_name)
         try:
             os.rename(self.model_hdf_file, new_model_path)
-        except FileExistsError:  # 相同误差的model已存在则删除旧模型
+        except FileExistsError:  # Delete the old model if a model with the same error already exists.
             os.remove(self.model_hdf_file)
-        except FileNotFoundError:  # 原模型不存在则跳过
+        except FileNotFoundError:  # If the original model does not exist, skip it.
             pass
         self.model_hdf_file = new_model_path
 

@@ -1,9 +1,9 @@
 ## Introduction
 
-This code repository proposes two indexing methods, STUM and STUBRIN, which aim to improve the query performance and update performance of spatially learned indexes, and build SLIBS and SLBRIN for contruction of STUM and STUBRIN . 
+This code repository proposes two indexing methods, STUM and STUBRIN, which aim to improve the query performance and update performance of spatially learned indexes, and build SLIBS and SLBRIN for contruction of STUM and STUBRIN. 
 
-1. Basic Structure for Spatial Learned Index，SLIBS: A spatial learned index using dimensionality reduction and then construction of a unidimensional learned index
-2. Spatial Learned Block Range Index，SLBRIN: Optimise SLIBS using space partitioning method and block range index structure to improve query performance in external memory space
+1. Basic Structure for Spatial Learned Index，SLIBS: A spatial learned index using dimensionality reduction and then construction of a unidimensional learned index.
+2. Spatial Learned Block Range Index，SLBRIN: Optimise SLIBS using space partitioning method and block range index structure to improve query performance in external memory space.
 3. Spatio-Temporal Updatable Method，STUM: Optimisation of SLIBS using spatio-temporal sequence prediction algorithm to improve the query performance and update performance of the update process.
 4. Spatio-Temporal Updatable Learned Block Range Index，STUBRIN: Optimisation of SLBRIN using STUM to complement its strengths and focus on inefficient updating due to inefficient model construction.
 
@@ -20,7 +20,7 @@ We implement STUM and STUBRIN with python 3.7 on the Ubuntu. You need to install
   * create_data.py：Data processing code, including data cleansing of nyct datasets, generation of synthetic datasets, etc.
 * src
   * experiment
-  * proposed_sli：our propose index method
+  * proposed_sli：our proposed index method
   * sli（Spatial Learned Index）：Spatial learned indexes to be compared
   * utils：Tools like Geohash
   * spatial_index.py：Father class of index

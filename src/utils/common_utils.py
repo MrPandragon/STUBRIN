@@ -263,9 +263,10 @@ class Region:
             region[3] = self.right - pow(10, -precision)
 
 
-# python sys.getsizeof无法对自定义类统计内存，提出以下方法
-# 代码来自：https://code.activestate.com/recipes/577504
-# l342有漏洞：只统计class.__dict__包含的属性，rtree.__dict__不包含bounds等属性，导致内存统计偏小
+# python sys.getsizeofMemory cannot be statically analyzed for custom classes. The following approaches are proposed
+# https://code.activestate.com/recipes/577504
+# l342 has a vulnerability: only attributes contained in class.__dict__ are counted,
+# while attributes such as bounds are not contained in rtree.
 def total_size(o, handlers={}, verbose=False):
     """ Returns the approximate memory footprint an object and all of its contents.
 

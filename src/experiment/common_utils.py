@@ -181,7 +181,7 @@ def test_query(index, data_distribution, type):
     io_cost = index.io_cost
     query_list = load_query(data_distribution, type).tolist()
     query_list_len = len(query_list)
-    # 查询跑多次，减小算力波动的影响
+    # Query the number of runs to reduce the impact of fluctuations in computing power.
     for k in range(5):
         start_time = time.time()
         index_test_query(query_list)
